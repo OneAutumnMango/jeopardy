@@ -18,8 +18,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Lowercase image name
-        run: echo "IMAGE=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]'):latest" >> $GITHUB_ENV
+      - name: Set lowercase repository
+        id: repo
+        run: echo "repo=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Log in to GitHub Container Registry
         if: github.event_name == 'push'
@@ -34,6 +35,8 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name == 'push' }}
-          tags: ${{ env.IMAGE }}
+          tags: |
+            ghcr.io/${{ steps.repo.outputs.repo }}:latest
+            ghcr.io/${{ steps.repo.outputs.repo }}:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
