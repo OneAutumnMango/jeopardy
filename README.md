@@ -92,7 +92,7 @@ Open [http://localhost:5000](http://localhost:5000). The built-in Flask dev serv
    - **Shift-click** a tile → toggle it used/unused without opening it
    - Click **Reveal Answer** to show the answer
    - Click **Mark Used & Close** to close the tile (it goes dark)
-6. **Daily Double**: when a ★ tile is clicked, a splash screen appears — click through to enter the wager, then proceed as normal
+6. **Daily Double**: when a DD tile is clicked, a splash screen appears — click through to enter the wager, then proceed as normal
 7. **Buzz Panel**: shows who buzzed first; Correct/Wrong buttons adjust score and clear the queue
 8. **Scores Panel**: manual ± buttons if you need to adjust outside of a question
 9. **Final Jeopardy**: enter the category + question in the sidebar, click **Start Final Jeopardy**, then **Reveal Question** when all wagers are in; reveal each player's answer one by one
