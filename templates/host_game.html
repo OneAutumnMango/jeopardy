@@ -2,6 +2,7 @@
 {% block title %}Host – {{ code }}{% endblock %}
 {% block extra_scripts %}
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>const HOST_GAME_CODE = "{{ code }}";</script>
 <script src="{{ url_for('static', filename='js/host_game.js') }}"></script>
 {% endblock %}
@@ -19,6 +20,20 @@
       <div style="text-align:center;color:var(--muted);font-size:0.85rem;">
         Players: <span id="player-count">0</span>
       </div>
+      <div id="join-qr" style="display:flex;justify-content:center;margin:0.75rem 0;"></div>
+      <script>
+        (function(){
+          var joinUrl = window.location.origin + '/join';
+          new QRCode(document.getElementById('join-qr'), {
+            text: joinUrl,
+            width: 160,
+            height: 160,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        })();
+      </script>
     </div>
 
     <!-- Scores -->

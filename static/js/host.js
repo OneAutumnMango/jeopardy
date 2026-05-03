@@ -50,6 +50,20 @@ socket.on('session_created', ({ code, join_url }) => {
   const urlEl = document.getElementById('join-url');
   urlEl.textContent = join_url;
   urlEl.href = join_url;
+
+  // Generate QR code
+  const qrContainer = document.getElementById('join-qr');
+  qrContainer.innerHTML = '';
+  new QRCode(qrContainer, {
+    text: join_url,
+    width: 320,
+    height: 320,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+  document.getElementById('join-qr-panel').style.display = 'block';
+  if (typeof positionQrPanel === 'function') positionQrPanel();
 });
 
 socket.on('player_joined', ({ players }) => {

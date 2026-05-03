@@ -2,6 +2,7 @@
 {% block title %}Host a Game{% endblock %}
 {% block extra_scripts %}
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="{{ url_for('static', filename='js/host.js') }}"></script>
 {% endblock %}
 {% block content %}
@@ -31,5 +32,31 @@
 
     <button class="btn btn-gold btn-large" onclick="startGame()" style="width:100%">Start Game →</button>
   </div>
+
+  <!-- QR code — fixed, dynamically centred in the gap right of the content column -->
+  <div id="join-qr-panel" style="display:none;position:fixed;top:45%;transform:translateY(-50%);background:var(--card,#1a1a2e);border:2px solid var(--gold,#c9a227);border-radius:12px;padding:1rem;text-align:center;z-index:999;">
+    <div style="color:var(--muted,#aaa);font-size:0.75rem;margin-bottom:0.5rem;letter-spacing:0.05em;">SCAN TO JOIN</div>
+    <div id="join-qr"></div>
+  </div>
+  <script>
+    function positionQrPanel() {
+      const panel = document.getElementById('join-qr-panel');
+      if (!panel || panel.style.display === 'none') return;
+      const container = document.querySelector('.setup-container');
+      const containerRight = container ? container.getBoundingClientRect().right : window.innerWidth / 2;
+      const gap = window.innerWidth - containerRight;
+      const gapCenter = containerRight + gap / 2;
+      panel.style.left = gapCenter + 'px';
+      panel.style.transform = 'translate(-50%, -50%)';
+
+      // Shrink QR if it doesn't fit in the gap (with 16px padding each side)
+      const available = gap - 32;
+      const panelWidth = panel.offsetWidth;
+      const scale = available > 0 && panelWidth > available ? available / panelWidth : 1;
+      panel.style.transformOrigin = 'center center';
+      panel.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    }
+    window.addEventListener('resize', positionQrPanel);
+  </script>
 </div>
 {% endblock %}
