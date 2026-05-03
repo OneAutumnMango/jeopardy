@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Jeopardy – Home{% endblock %}
+{% block content %}
+<div class="home-container">
+  <h1 class="home-title">JEOPARDY!</h1>
+  <p class="home-subtitle">Create your boards then start the game</p>
+  <div class="board-cards">
+    {% for board_id, board in boards.items() %}
+    <div class="board-card">
+      <h2>{{ board.label }}</h2>
+      <p class="board-meta">
+        Point values:
+        {% set m = board.point_multiplier %}
+        {{ m }}–{{ m * 5 }}
+        &nbsp;&bull;&nbsp; 5 categories &nbsp;&bull;&nbsp; 25 questions
+      </p>
+      <div class="card-actions">
+        <a href="{{ url_for('admin', board_id=board_id) }}" class="btn btn-secondary">Edit Board</a>
+        <a href="{{ url_for('game', board_id=board_id) }}" class="btn btn-primary">Play Game</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

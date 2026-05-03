@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ board.label }} – Game{% endblock %}
+{% block content %}
+<div class="game-container">
+  <div class="game-header">
+    <h1 class="game-title">{{ board.label }}</h1>
+    <div class="game-controls">
+      <a href="{{ url_for('admin', board_id=board_id) }}" class="btn btn-secondary">Edit Board</a>
+      <button class="btn btn-secondary" onclick="resetBoard()">Reset Board</button>
+    </div>
+  </div>
+
+  <div class="board" id="board">
+    {# Category headers #}
+    {% for cat in board.categories %}
+    <div class="cell category-header">{{ cat.title }}</div>
+    {% endfor %}
+
+    {# Question cells: row-major order (points increment down, categories across) #}
+    {% for q_idx in range(5) %}
+    {% for cat in board.categories %}
+    {% set q = cat.questions[q_idx] %}
+    <div
+      class="cell question-cell"
+      id="{{ q.id }}"
+      data-id="{{ q.id }}"
+      data-question="{{ q.question | e }}"
+      data-answer="{{ q.answer | e }}"
+      data-points="{{ q.points }}"
+    >
+      <span class="points-display">${{ q.points }}</span>
+      <span class="text-display hidden"></span>
+    </div>
+    {% endfor %}
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  const BOARD_ID = "{{ board_id }}";
+</script>
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+{% endblock %}

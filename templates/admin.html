@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ board.label }}{% endblock %}
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Edit {{ board.label }}</h1>
+    <div class="admin-actions">
+      <a href="{{ url_for('game', board_id=board_id) }}" class="btn btn-primary">Play Game</a>
+      <button id="save-btn" class="btn btn-gold" onclick="saveBoard()">Save All Changes</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <div class="admin-grid" id="admin-grid">
+    {# Category title row #}
+    <div class="admin-cell header-cell corner-cell"></div>
+    {% for cat in board.categories %}
+    <div class="admin-cell header-cell">
+      <label class="cell-label">Category {{ loop.index }}</label>
+      <input
+        type="text"
+        class="cat-title-input"
+        data-cat-index="{{ loop.index0 }}"
+        value="{{ cat.title }}"
+        placeholder="Category name"
+      >
+    </div>
+    {% endfor %}
+
+    {# Question rows #}
+    {% for q_idx in range(5) %}
+    <div class="admin-cell header-cell points-label">
+      {{ board.point_multiplier * (q_idx + 1) }}
+    </div>
+    {% for cat in board.categories %}
+    {% set q = cat.questions[q_idx] %}
+    <div class="admin-cell question-cell" data-cat="{{ loop.index0 }}" data-q="{{ q_idx }}">
+      <label class="cell-label">Question</label>
+      <textarea
+        class="q-input"
+        data-cat-index="{{ loop.index0 }}"
+        data-q-index="{{ q_idx }}"
+        placeholder="Enter question…"
+        rows="3"
+      >{{ q.question }}</textarea>
+      <label class="cell-label">Answer</label>
+      <textarea
+        class="a-input"
+        data-cat-index="{{ loop.index0 }}"
+        data-q-index="{{ q_idx }}"
+        placeholder="Enter answer…"
+        rows="2"
+      >{{ q.answer }}</textarea>
+    </div>
+    {% endfor %}
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  const BOARD_ID = "{{ board_id }}";
+  const POINT_MULTIPLIER = {{ board.point_multiplier }};
+  const BOARD_LABEL = "{{ board.label }}";
+  const CATEGORIES_DATA = {{ board.categories | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}
