@@ -1071,3 +1071,96 @@ body {
 @media (max-width: 860px) {
   .final-host-layout { grid-template-columns: 1fr; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   Edit Boards – tabs
+   ═══════════════════════════════════════════════════════ */
+.edit-tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 1.25rem;
+  margin-top: 0.75rem;
+}
+.edit-tab {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'Oswald', sans-serif;
+  font-size: 1rem;
+  padding: 0.5rem 1.25rem;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s;
+}
+.edit-tab:hover { color: var(--text); }
+.edit-tab.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+.tab-panel { display: block; }
+.tab-panel.hidden { display: none; }
+
+/* ═══════════════════════════════════════════════════════
+   Dropdown button menus
+   ═══════════════════════════════════════════════════════ */
+.dropdown-wrap {
+  position: relative;
+  display: inline-block;
+}
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--nav-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-width: 200px;
+  z-index: 200;
+  overflow: hidden;
+}
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.9rem;
+  padding: 0.55rem 1rem;
+  text-align: left;
+  cursor: pointer;
+}
+.dropdown-menu button:hover { background: rgba(255,255,255,0.08); }
+
+/* ═══════════════════════════════════════════════════════
+   Split buttons (Export / Import)
+   ═══════════════════════════════════════════════════════ */
+.split-btn {
+  display: inline-flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.split-btn button,
+.split-btn label {
+  background: #2a2a4a;
+  color: var(--text);
+  border: none;
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: background 0.15s;
+  margin: 0;
+}
+.split-btn button:hover,
+.split-btn label:hover { background: #3a3a5e; }
+.split-btn .split-arrow {
+  padding: 0.45rem 0.6rem;
+  border-left: 1px solid var(--border);
+  font-size: 0.75rem;
+}

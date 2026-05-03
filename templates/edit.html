@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Edit Boards{% endblock %}
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Edit Boards</h1>
+    <div class="admin-actions">
+      <!-- Export split button -->
+      <div class="dropdown-wrap split-btn-wrap">
+        <div class="split-btn btn-secondary">
+          <button onclick="exportAll()">Export</button>
+          <button class="split-arrow" onclick="toggleDropdown('export-menu')" title="Export specific">▾</button>
+        </div>
+        <div id="export-menu" class="dropdown-menu hidden">
+          <button onclick="exportOne('board1'); closeDropdowns()">Board 1 only</button>
+          <button onclick="exportOne('board2'); closeDropdowns()">Board 2 only</button>
+          <button onclick="exportOne('final'); closeDropdowns()">Final Jeopardy only</button>
+        </div>
+      </div>
+      <!-- Import split button -->
+      <div class="dropdown-wrap split-btn-wrap">
+        <div class="split-btn btn-secondary">
+          <label style="cursor:pointer">Import<input id="import-input" type="file" accept=".json" style="display:none"></label>
+          <button class="split-arrow" onclick="toggleDropdown('import-menu')" title="Import specific">▾</button>
+        </div>
+        <div id="import-menu" class="dropdown-menu hidden">
+          <label style="cursor:pointer;display:block;padding:0.55rem 1rem;font-size:0.9rem" onclick="closeDropdowns()">Into Board 1<input id="import-board1" type="file" accept=".json" style="display:none" data-target="board1"></label>
+          <label style="cursor:pointer;display:block;padding:0.55rem 1rem;font-size:0.9rem" onclick="closeDropdowns()">Into Board 2<input id="import-board2" type="file" accept=".json" style="display:none" data-target="board2"></label>
+          <label style="cursor:pointer;display:block;padding:0.55rem 1rem;font-size:0.9rem" onclick="closeDropdowns()">Into Final Jeopardy<input id="import-final" type="file" accept=".json" style="display:none" data-target="final"></label>
+        </div>
+      </div>
+      <!-- Reset dropdown -->
+      <div class="dropdown-wrap">
+        <button class="btn btn-danger btn-small" onclick="toggleDropdown('reset-menu')">Reset ▾</button>
+        <div id="reset-menu" class="dropdown-menu hidden">
+          <button onclick="resetOne('board1'); closeDropdowns()">Reset Board 1</button>
+          <button onclick="resetOne('board2'); closeDropdowns()">Reset Board 2</button>
+          <button onclick="resetOne('final'); closeDropdowns()">Reset Final Jeopardy</button>
+          <button onclick="resetAll(); closeDropdowns()">Reset All</button>
+        </div>
+      </div>
+      <button id="save-btn" class="btn btn-gold" onclick="saveAll()">Save All</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Tab bar -->
+  <div class="edit-tabs">
+    <button class="edit-tab active" data-tab="tab-board1" onclick="switchTab(this)">Board 1</button>
+    <button class="edit-tab" data-tab="tab-board2" onclick="switchTab(this)">Board 2</button>
+    <button class="edit-tab" data-tab="tab-final" onclick="switchTab(this)">Final Jeopardy</button>
+  </div>
+
+  <!-- Board 1 tab -->
+  <div id="tab-board1" class="tab-panel">
+    <div class="admin-grid" id="admin-grid-board1" data-board="board1">
+      <div class="admin-cell header-cell corner-cell"></div>
+      {% for cat in boards.board1.categories %}
+      <div class="admin-cell header-cell">
+        <label class="cell-label">Category {{ loop.index }}</label>
+        <input type="text" class="cat-title-input" data-board="board1" data-cat-index="{{ loop.index0 }}" value="{{ cat.title }}" placeholder="Category name">
+      </div>
+      {% endfor %}
+      {% for q_idx in range(5) %}
+      <div class="admin-cell header-cell points-label">{{ boards.board1.point_multiplier * (q_idx + 1) }}</div>
+      {% for cat in boards.board1.categories %}
+      {% set q = cat.questions[q_idx] %}
+      <div class="admin-cell question-cell">
+        <label class="cell-label">Question</label>
+        <textarea class="q-input" data-board="board1" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="3" placeholder="Enter question…">{{ q.question }}</textarea>
+        <label class="cell-label">Answer</label>
+        <textarea class="a-input" data-board="board1" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="2" placeholder="Enter answer…">{{ q.answer }}</textarea>
+      </div>
+      {% endfor %}
+      {% endfor %}
+    </div>
+    <div style="margin-top:0.75rem">
+      <a href="{{ url_for('game', board_id='board1') }}" class="btn btn-primary btn-small">Test Board 1</a>
+    </div>
+  </div>
+
+  <!-- Board 2 tab -->
+  <div id="tab-board2" class="tab-panel hidden">
+    <div class="admin-grid" id="admin-grid-board2" data-board="board2">
+      <div class="admin-cell header-cell corner-cell"></div>
+      {% for cat in boards.board2.categories %}
+      <div class="admin-cell header-cell">
+        <label class="cell-label">Category {{ loop.index }}</label>
+        <input type="text" class="cat-title-input" data-board="board2" data-cat-index="{{ loop.index0 }}" value="{{ cat.title }}" placeholder="Category name">
+      </div>
+      {% endfor %}
+      {% for q_idx in range(5) %}
+      <div class="admin-cell header-cell points-label">{{ boards.board2.point_multiplier * (q_idx + 1) }}</div>
+      {% for cat in boards.board2.categories %}
+      {% set q = cat.questions[q_idx] %}
+      <div class="admin-cell question-cell">
+        <label class="cell-label">Question</label>
+        <textarea class="q-input" data-board="board2" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="3" placeholder="Enter question…">{{ q.question }}</textarea>
+        <label class="cell-label">Answer</label>
+        <textarea class="a-input" data-board="board2" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="2" placeholder="Enter answer…">{{ q.answer }}</textarea>
+      </div>
+      {% endfor %}
+      {% endfor %}
+    </div>
+    <div style="margin-top:0.75rem">
+      <a href="{{ url_for('game', board_id='board2') }}" class="btn btn-primary btn-small">Test Board 2</a>
+    </div>
+  </div>
+
+  <!-- Final Jeopardy tab -->
+  <div id="tab-final" class="tab-panel hidden">
+    <div style="max-width:600px;padding:1.5rem 0">
+      <div style="margin-bottom:1.25rem">
+        <label style="font-family:'Oswald',sans-serif;font-size:0.85rem;color:var(--muted);display:block;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em">Category</label>
+        <input id="final-category" type="text" class="final-input" style="width:100%" placeholder="e.g. Famous Scientists">
+      </div>
+      <div style="margin-bottom:1.25rem">
+        <label style="font-family:'Oswald',sans-serif;font-size:0.85rem;color:var(--muted);display:block;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em">Question</label>
+        <textarea id="final-question" class="final-input" rows="5" style="width:100%;resize:vertical" placeholder="The final jeopardy question…"></textarea>
+      </div>
+      <div style="margin-bottom:1.25rem">
+        <label style="font-family:'Oswald',sans-serif;font-size:0.85rem;color:var(--muted);display:block;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em">Answer</label>
+        <input id="final-answer" type="text" class="final-input" style="width:100%" placeholder="The correct answer">
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const BOARDS_DATA = {
+    board1: { label: "{{ boards.board1.label }}", point_multiplier: {{ boards.board1.point_multiplier }}, categories: {{ boards.board1.categories | tojson }} },
+    board2: { label: "{{ boards.board2.label }}", point_multiplier: {{ boards.board2.point_multiplier }}, categories: {{ boards.board2.categories | tojson }} }
+  };
+</script>
+<script src="{{ url_for('static', filename='js/edit.js') }}"></script>
+{% endblock %}
