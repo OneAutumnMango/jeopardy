@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Host – {{ code }}{% endblock %}
+{% block extra_scripts %}
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>const HOST_GAME_CODE = "{{ code }}";</script>
+<script src="{{ url_for('static', filename='js/host_game.js') }}"></script>
+{% endblock %}
+{% block content %}
+<div class="host-game-layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="host-sidebar">
+
+    <div class="sidebar-section">
+      <div class="session-badge">{{ code }}</div>
+      <div style="text-align:center;color:var(--gold);font-family:'Oswald',sans-serif;font-size:0.9rem;margin-top:0.2rem">
+        Round {{ round_num }} — {{ board.label }}
+      </div>
+      <div style="text-align:center;color:var(--muted);font-size:0.85rem;">
+        Players: <span id="player-count">0</span>
+      </div>
+    </div>
+
+    <!-- Scores -->
+    <div class="sidebar-section">
+      <button class="btn btn-secondary" style="width:100%" onclick="toggleScorePanel()">
+        ▼ Scores
+      </button>
+      <div id="score-panel" class="hidden" style="margin-top:0.75rem">
+        <table class="score-table">
+          <tbody id="score-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- End Game -->
+    <div>
+      <button class="btn btn-danger" style="width:100%" onclick="endGame()">End Game</button>
+    </div>
+
+  </aside>
+
+  <!-- ── Main Area ── -->
+  <main class="host-board-area">
+
+    <!-- Board (shown during rounds 1 & 2) -->
+    <div id="board-section">
+      <div class="board" id="board">
+        {% for cat in board.categories %}
+        <div class="cell category-header">{{ cat.title }}</div>
+        {% endfor %}
+
+        {% for q_idx in range(5) %}
+        {% for cat in board.categories %}
+        {% set q = cat.questions[q_idx] %}
+        <div
+          class="cell question-cell"
+          id="{{ q.id }}"
+          data-id="{{ q.id }}"
+          data-points="{{ q.points }}"
+        >
+          <span class="points-display">€{{ q.points }}</span>
+        </div>
+        {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Final Jeopardy (shown after round 2 is cleared) -->
+    <div id="final-section" class="hidden">
+      <div class="final-host-layout">
+
+        <div class="final-setup-col">
+          <h2 style="font-family:'Oswald',sans-serif;color:var(--gold);font-size:2rem;margin-bottom:1rem">Final Jeopardy</h2>
+          <div style="margin-bottom:0.75rem">
+            <label style="font-size:0.8rem;color:var(--muted);display:block;margin-bottom:0.3rem">Category</label>
+            <input id="final-category-input" class="final-input" type="text" placeholder="e.g. Famous Scientists">
+          </div>
+          <div style="margin-bottom:0.75rem">
+            <label style="font-size:0.8rem;color:var(--muted);display:block;margin-bottom:0.3rem">Question</label>
+            <textarea id="final-question-input" class="final-input" rows="4" placeholder="The final question…" style="resize:vertical"></textarea>
+          </div>
+          <button class="btn btn-gold" style="width:100%;margin-bottom:0.5rem" onclick="startFinal()">
+            Start Final Jeopardy
+          </button>
+          <button class="btn btn-secondary" style="width:100%" id="reveal-final-q-btn" onclick="revealFinalQuestion()" disabled>
+            Reveal Question to Players
+          </button>
+          <div id="final-status-notes" style="margin-top:0.75rem"></div>
+        </div>
+
+        <div class="final-players-col">
+          <h3 style="font-family:'Oswald',sans-serif;color:var(--gold);font-size:1.3rem;margin-bottom:0.75rem">Players</h3>
+          <div id="final-players-list"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Host Tile Overlay ── -->
+  <div id="host-tile-overlay" class="tile-overlay host-tile-overlay hidden" style="z-index:600">
+    <div class="tile-overlay-content">
+      <div id="host-overlay-points" class="overlay-points"></div>
+      <div id="host-overlay-text" class="overlay-text question-text"></div>
+      <div class="overlay-actions" style="margin-top:1rem">
+        <button id="host-reveal-answer-btn" class="btn btn-gold" onclick="hostRevealAnswer()">Reveal Answer</button>
+        <button class="btn btn-secondary" onclick="hostMarkUsed()">Mark Used &amp; Close</button>
+        <button class="btn btn-secondary" onclick="closeHostOverlay()">Close (keep open)</button>
+      </div>
+      <!-- Buzz queue corner -->
+      <div id="overlay-buzz-queue" class="overlay-buzz-queue"></div>
+      <!-- Score controls for current buzzer -->
+      <div id="overlay-score-controls" class="overlay-score-controls hidden">
+        <div id="overlay-buzzer-name" class="overlay-buzzer-name"></div>
+        <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.4rem">
+          <button class="btn btn-success" onclick="overlayScoreCorrect()">✓ Correct</button>
+          <button class="btn btn-danger" onclick="overlayScoreWrong()">✗ Wrong</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Round Transition Modal ── -->
+  <div id="round-modal" class="round-modal hidden">
+    <div class="round-modal-content">
+      <div id="round-modal-title" class="round-modal-title"></div>
+      <div id="round-modal-subtitle" class="round-modal-subtitle"></div>
+      <button class="btn btn-gold btn-large" onclick="proceedRound()">Proceed →</button>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

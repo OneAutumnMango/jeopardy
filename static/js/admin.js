@@ -1,4 +1,6 @@
-// admin.js — serialize the admin form and POST to the server
+// admin.js — boards saved to localStorage; export/import JSON; server save as fallback
+
+const LS_KEY = `jeopardy-board-${BOARD_ID}`;
 
 function serializeBoard() {
   const catTitleInputs = document.querySelectorAll('.cat-title-input');
@@ -36,29 +38,84 @@ function showToast(message, isError = false) {
   setTimeout(() => { toast.className = 'toast hidden'; }, 3000);
 }
 
+function loadFromLocalStorage() {
+  const raw = localStorage.getItem(LS_KEY);
+  if (!raw) return;
+  try {
+    const board = JSON.parse(raw);
+    board.categories.forEach((cat, catIdx) => {
+      const titleInput = document.querySelector(`.cat-title-input[data-cat-index="${catIdx}"]`);
+      if (titleInput) titleInput.value = cat.title;
+      cat.questions.forEach((q, qIdx) => {
+        const qInput = document.querySelector(`.q-input[data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
+        const aInput = document.querySelector(`.a-input[data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
+        if (qInput) qInput.value = q.question;
+        if (aInput) aInput.value = q.answer;
+      });
+    });
+  } catch (e) {
+    console.warn('Could not load board from localStorage', e);
+  }
+}
+
 async function saveBoard() {
   const btn = document.getElementById('save-btn');
   btn.disabled = true;
   btn.textContent = 'Saving…';
-
   const payload = serializeBoard();
-
-  try {
-    const res = await fetch(`/admin/${BOARD_ID}/save`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if (data.status === 'ok') {
-      showToast('Board saved successfully!');
-    } else {
-      showToast('Error saving board: ' + (data.message || 'Unknown error'), true);
-    }
-  } catch (err) {
-    showToast('Network error: ' + err.message, true);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Save All Changes';
-  }
+  localStorage.setItem(LS_KEY, JSON.stringify(payload));
+  showToast('Board saved to browser!');
+  btn.disabled = false;
+  btn.textContent = 'Save All Changes';
 }
+
+function resetBoard() {
+  if (!confirm('Reset this board to defaults? This will clear all saved questions.')) return;
+  localStorage.removeItem(LS_KEY);
+  window.location.reload();
+}
+
+function exportBoard() {
+  const payload = serializeBoard();
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${BOARD_ID}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importBoard(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const board = JSON.parse(e.target.result);
+      // Always use this board's multiplier/label regardless of import source
+      board.point_multiplier = POINT_MULTIPLIER;
+      board.label = BOARD_LABEL;
+      board.categories.forEach((cat, catIdx) => {
+        cat.questions.forEach((q, qIdx) => {
+          q.points = POINT_MULTIPLIER * (qIdx + 1);
+          q.id = `q-${catIdx}-${qIdx}`;
+        });
+      });
+      localStorage.setItem(LS_KEY, JSON.stringify(board));
+      window.location.reload();
+    } catch (err) {
+      showToast('Invalid JSON file', true);
+    }
+  };
+  reader.readAsText(file);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadFromLocalStorage();
+  const importInput = document.getElementById('import-input');
+  if (importInput) {
+    importInput.addEventListener('change', importBoard);
+  }
+});

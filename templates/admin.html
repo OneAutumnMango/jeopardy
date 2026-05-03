@@ -5,7 +5,13 @@
   <div class="admin-header">
     <h1>Edit {{ board.label }}</h1>
     <div class="admin-actions">
-      <a href="{{ url_for('game', board_id=board_id) }}" class="btn btn-primary">Play Game</a>
+      <a href="{{ url_for('game', board_id=board_id) }}" class="btn btn-primary">Test</a>
+      <button class="btn btn-secondary" onclick="exportBoard()">Export JSON</button>
+      <label class="btn btn-secondary" style="cursor:pointer">
+        Import JSON
+        <input id="import-input" type="file" accept=".json" style="display:none">
+      </label>
+      <button class="btn btn-danger btn-small" onclick="resetBoard()">Reset Board</button>
       <button id="save-btn" class="btn btn-gold" onclick="saveBoard()">Save All Changes</button>
     </div>
   </div>

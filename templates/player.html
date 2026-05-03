@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Playing{% endblock %}
+{% block extra_scripts %}
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>const PLAYER_CODE = "{{ code }}";</script>
+<script src="{{ url_for('static', filename='js/player.js') }}"></script>
+{% endblock %}
+{% block content %}
+<div class="player-container">
+
+  <!-- Header: name + score -->
+  <div class="player-header">
+    <div id="player-name-display" class="player-name-display">…</div>
+    <div id="my-score" class="my-score">€0</div>
+  </div>
+
+  <div id="error-msg" class="error-msg hidden"></div>
+
+  <!-- ── LOBBY PHASE ── -->
+  <div id="phase-lobby">
+    <p class="waiting-msg">Waiting for host to start the game…</p>
+  </div>
+
+  <!-- ── ROUND TRANSITION PHASE ── -->
+  <div id="phase-round-transition" class="hidden">
+    <div style="text-align:center;padding:2rem 1rem">
+      <div id="round-transition-title" style="font-family:'Oswald',sans-serif;color:var(--gold);font-size:3rem;margin-bottom:1rem"></div>
+      <div id="round-transition-subtitle" style="color:var(--muted);font-size:1rem"></div>
+    </div>
+  </div>
+
+  <!-- ── GAME PHASE ── -->
+  <div id="phase-game" class="hidden">
+    <div id="question-display" class="player-question-display hidden">
+      <div id="current-points" class="player-question-points"></div>
+      <div id="current-question" class="player-question-text"></div>
+    </div>
+    <div id="answer-display" class="player-answer-display hidden">
+      <div id="current-answer" class="player-answer-text"></div>
+    </div>
+    <div id="buzz-status" class="buzz-status"></div>
+    <button id="buzz-btn" class="buzz-button" onclick="buzz()" disabled>BUZZ!</button>
+    <div class="leaderboard" id="leaderboard"></div>
+  </div>
+
+  <!-- ── FINAL JEOPARDY PHASE ── -->
+  <div id="phase-final" class="hidden final-section">
+    <div class="final-category-display" id="final-category-text"></div>
+
+    <!-- Wager section -->
+    <div id="wager-section">
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:0.5rem">
+        Your current score: <strong id="wager-my-score" style="color:var(--gold)">€0</strong><br>
+        Wager between €0 and your current score.
+      </p>
+      <input id="wager-input" class="final-input" type="number" min="0" placeholder="Enter wager amount">
+      <button class="btn btn-gold" style="width:100%;margin-top:0.75rem" onclick="submitWager()">Lock In Wager</button>
+    </div>
+    <div id="wager-submitted-msg" class="submitted-msg hidden">Wager locked in! Waiting for question…</div>
+
+    <!-- Question -->
+    <div id="final-question-display" class="hidden">
+      <div id="final-question-text" class="player-question-text" style="text-align:center;padding:1rem"></div>
+    </div>
+
+    <!-- Answer section -->
+    <div id="answer-section" class="hidden">
+      <input id="final-answer-input" class="final-input" type="text" placeholder="Your answer…">
+      <button class="btn btn-gold" style="width:100%;margin-top:0.75rem" onclick="submitFinalAnswer()">Submit Answer</button>
+    </div>
+    <div id="answer-submitted-msg" class="submitted-msg hidden">Answer submitted! Waiting for host…</div>
+
+    <!-- Final reveals leaderboard -->
+    <div id="final-leaderboard" class="leaderboard"></div>
+  </div>
+
+  <!-- ── ENDED PHASE ── -->
+  <div id="phase-ended" class="hidden">
+    <h2 style="font-family:'Oswald',sans-serif;color:var(--gold);text-align:center;font-size:2.5rem;margin-bottom:1rem">
+      Game Over!
+    </h2>
+    <div id="final-scores" class="leaderboard"></div>
+  </div>
+
+</div>
+{% endblock %}

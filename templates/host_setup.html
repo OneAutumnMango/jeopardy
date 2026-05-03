@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Host a Game{% endblock %}
+{% block extra_scripts %}
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/host.js') }}"></script>
+{% endblock %}
+{% block content %}
+<div class="setup-container">
+  <h1 class="page-title">Host a Game</h1>
+
+  <div id="error-msg" class="error-msg hidden"></div>
+
+  <div id="setup-form">
+    <p style="color:var(--muted);margin-bottom:1rem;">Create a session to play both boards. Players join on their phones.</p>
+    <button class="btn btn-gold btn-large" onclick="createSession()" style="width:100%">Create Session</button>
+  </div>
+
+  <div id="lobby-panel" class="hidden">
+    <div class="session-code-display">
+      <div class="code-label">Session Code — share this with players</div>
+      <div id="session-code" class="code-value"></div>
+    </div>
+    <div class="join-url-block">
+      Join at: <a id="join-url" href="#" target="_blank"></a>
+    </div>
+
+    <div class="player-lobby">
+      <h3>Players <span id="player-count-lobby">(0)</span></h3>
+      <ul id="player-list"></ul>
+    </div>
+
+    <button class="btn btn-gold btn-large" onclick="startGame()" style="width:100%">Start Game →</button>
+  </div>
+</div>
+{% endblock %}

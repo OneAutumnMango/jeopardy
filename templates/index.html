@@ -1,22 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Jeopardy – Home{% endblock %}
+{% block title %}Jeopardy!{% endblock %}
 {% block content %}
 <div class="home-container">
   <h1 class="home-title">JEOPARDY!</h1>
-  <p class="home-subtitle">Create your boards then start the game</p>
+  <p class="home-subtitle">Host a game or test a board</p>
+
+  <div class="landing-actions">
+    <a href="{{ url_for('host_setup') }}" class="btn btn-gold btn-large">Host Game</a>
+    <a href="{{ url_for('join') }}" class="btn btn-primary btn-large">Join Game</a>
+  </div>
+
+  <div class="landing-divider">or test a board</div>
+
   <div class="board-cards">
-    {% for board_id, board in boards.items() %}
+    {% for board_id in ['board1', 'board2'] %}
     <div class="board-card">
-      <h2>{{ board.label }}</h2>
-      <p class="board-meta">
-        Point values:
-        {% set m = board.point_multiplier %}
-        {{ m }}–{{ m * 5 }}
-        &nbsp;&bull;&nbsp; 5 categories &nbsp;&bull;&nbsp; 25 questions
-      </p>
+      <h2>{{ board_id | replace('board', 'Board ') }}</h2>
       <div class="card-actions">
-        <a href="{{ url_for('admin', board_id=board_id) }}" class="btn btn-secondary">Edit Board</a>
-        <a href="{{ url_for('game', board_id=board_id) }}" class="btn btn-primary">Play Game</a>
+        <a href="{{ url_for('admin', board_id=board_id) }}" class="btn btn-secondary">Edit</a>
+        <a href="{{ url_for('game', board_id=board_id) }}" class="btn btn-primary">Test</a>
       </div>
     </div>
     {% endfor %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Edit Final Jeopardy{% endblock %}
+{% block content %}
+<div class="admin-container">
+  <div class="admin-header">
+    <h1>Final Jeopardy</h1>
+    <div class="admin-actions">
+      <button class="btn btn-danger btn-small" onclick="resetFinal()">Reset</button>
+      <button id="save-btn" class="btn btn-gold" onclick="saveFinal()">Save</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <div style="max-width:600px;padding:1.5rem 0">
+    <div style="margin-bottom:1.25rem">
+      <label style="font-family:'Oswald',sans-serif;font-size:0.85rem;color:var(--muted);display:block;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em">Category</label>
+      <input id="final-category" type="text" class="final-input" style="width:100%" placeholder="e.g. Famous Scientists">
+    </div>
+    <div style="margin-bottom:1.25rem">
+      <label style="font-family:'Oswald',sans-serif;font-size:0.85rem;color:var(--muted);display:block;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em">Question</label>
+      <textarea id="final-question" class="final-input" rows="5" style="width:100%;resize:vertical" placeholder="The final jeopardy question…"></textarea>
+    </div>
+    <div style="margin-bottom:1.25rem">
+      <label style="font-family:'Oswald',sans-serif;font-size:0.85rem;color:var(--muted);display:block;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em">Answer</label>
+      <input id="final-answer" type="text" class="final-input" style="width:100%" placeholder="The correct answer">
+    </div>
+  </div>
+</div>
+
+<script>
+const LS_KEY = 'jeopardy-final';
+
+function load() {
+  const raw = localStorage.getItem(LS_KEY);
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    document.getElementById('final-category').value = d.category || '';
+    document.getElementById('final-question').value = d.question || '';
+    document.getElementById('final-answer').value = d.answer || '';
+  } catch {}
+}
+
+function saveFinal() {
+  const data = {
+    category: document.getElementById('final-category').value.trim(),
+    question: document.getElementById('final-question').value.trim(),
+    answer: document.getElementById('final-answer').value.trim()
+  };
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  const toast = document.getElementById('toast');
+  toast.textContent = 'Final Jeopardy saved!';
+  toast.className = 'toast toast-success';
+  setTimeout(() => { toast.className = 'toast hidden'; }, 3000);
+}
+
+function resetFinal() {
+  if (!confirm('Clear all Final Jeopardy settings?')) return;
+  localStorage.removeItem(LS_KEY);
+  document.getElementById('final-category').value = '';
+  document.getElementById('final-question').value = '';
+  document.getElementById('final-answer').value = '';
+}
+
+document.addEventListener('DOMContentLoaded', load);
+</script>
+{% endblock %}

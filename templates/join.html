@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Join a Game{% endblock %}
+{% block content %}
+<div class="join-container">
+  <h1 class="page-title">Join a Game</h1>
+
+  <div id="error-msg" class="error-msg hidden"></div>
+
+  <div class="join-form">
+    <label>
+      Session Code
+      <input id="code-input" type="text" maxlength="6" placeholder="ABCDEF"
+             autocomplete="off" autocapitalize="characters" spellcheck="false"
+             oninput="this.value = this.value.toUpperCase()"
+             value="{{ code }}">
+    </label>
+    <label>
+      Your Name
+      <input id="name-input" type="text" maxlength="30" placeholder="Enter your name">
+    </label>
+    <button class="btn btn-gold btn-large" id="join-btn" onclick="joinGame()">Join Game</button>
+  </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+const socket = io();
+
+function joinGame() {
+  const code = document.getElementById('code-input').value.trim().toUpperCase();
+  const name = document.getElementById('name-input').value.trim();
+  const errEl = document.getElementById('error-msg');
+
+  if (code.length !== 6) {
+    errEl.textContent = 'Enter a 6-letter session code.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (!name) {
+    errEl.textContent = 'Enter your name.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  errEl.classList.add('hidden');
+  document.getElementById('join-btn').disabled = true;
+  document.getElementById('join-btn').textContent = 'Joining…';
+
+  // Store name for reconnect on the player page
+  sessionStorage.setItem(`jeopardy-name-${code}`, name);
+  socket.emit('player_join', { code, name });
+}
+
+socket.on('join_confirmed', ({ code }) => {
+  window.location.href = `/player/${code}`;
+});
+
+socket.on('error', ({ message }) => {
+  const errEl = document.getElementById('error-msg');
+  errEl.textContent = message;
+  errEl.classList.remove('hidden');
+  document.getElementById('join-btn').disabled = false;
+  document.getElementById('join-btn').textContent = 'Join Game';
+});
+
+// Allow Enter key submission
+document.addEventListener('DOMContentLoaded', () => {
+  ['code-input', 'name-input'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') joinGame();
+    });
+  });
+});
+</script>
+{% endblock %}

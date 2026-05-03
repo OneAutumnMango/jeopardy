@@ -12,14 +12,16 @@
   <nav class="navbar">
     <a href="{{ url_for('index') }}" class="nav-brand">JEOPARDY!</a>
     <div class="nav-links">
+      <a href="{{ url_for('host_setup') }}">Host Game</a>
+      <a href="{{ url_for('join') }}">Join Game</a>
       <a href="{{ url_for('admin', board_id='board1') }}">Edit Board 1</a>
       <a href="{{ url_for('admin', board_id='board2') }}">Edit Board 2</a>
-      <a href="{{ url_for('game', board_id='board1') }}">Play Board 1</a>
-      <a href="{{ url_for('game', board_id='board2') }}">Play Board 2</a>
+      <a href="{{ url_for('final_edit') }}">Final Jeopardy</a>
     </div>
   </nav>
   <main>
     {% block content %}{% endblock %}
   </main>
+  {% block extra_scripts %}{% endblock %}
 </body>
 </html>
