@@ -22,6 +22,10 @@ socket.on('join_confirmed', ({ name }) => {
   document.getElementById('player-name-display').textContent = name;
 });
 
+socket.on('ping_check', ({ t }) => {
+  socket.emit('pong_check', { t });
+});
+
 socket.on('error', ({ message }) => {
   const el = document.getElementById('error-msg');
   el.textContent = message;

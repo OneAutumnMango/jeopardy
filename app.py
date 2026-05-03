@@ -2,6 +2,7 @@ import json
 import os
 import random
 import string
+import time
 
 from flask import Flask, render_template, request, jsonify, abort, redirect, url_for
 from flask_socketio import SocketIO, emit, join_room
@@ -198,6 +199,27 @@ def api_board(board_id):
     return jsonify(boards[board_id])
 
 
+# ── RTT background pinger ─────────────────────────────────────────────────────
+
+_pinger_started = False
+
+def _rtt_pinger():
+    """Send ping_check to all active players every 5 seconds."""
+    while True:
+        socketio.sleep(5)
+        for sess in list(sessions.values()):
+            for sid, player in list(sess["players"].items()):
+                if player["active"]:
+                    socketio.emit("ping_check", {"t": time.time()}, to=sid)
+
+@socketio.on("connect")
+def on_connect():
+    global _pinger_started
+    if not _pinger_started:
+        _pinger_started = True
+        socketio.start_background_task(_rtt_pinger)
+
+
 # ── SocketIO: Session lifecycle ───────────────────────────────────────────────
 
 @socketio.on("host_create_session")
@@ -273,9 +295,11 @@ def on_player_join(data):
     if existing_sid:
         player_data = sess["players"].pop(existing_sid)
         player_data["active"] = True
+        player_data.setdefault("half_rtt", 0.0)
         sess["players"][request.sid] = player_data
         join_room(code)
         emit("join_confirmed", {"name": name, "code": code})
+        emit("ping_check", {"t": time.time()})
         socketio.emit("player_joined", {"players": _session_players_list(sess)}, room=code)
         emit("scores_updated", {"scores": _scores_list(sess)})
         if sess["phase"] == "game":
@@ -291,10 +315,25 @@ def on_player_join(data):
         emit("error", {"message": "Game already in progress"})
         return
 
-    sess["players"][request.sid] = {"name": name, "score": 0, "active": True}
+    sess["players"][request.sid] = {"name": name, "score": 0, "active": True, "half_rtt": 0.0}
     join_room(code)
     emit("join_confirmed", {"name": name, "code": code})
+    emit("ping_check", {"t": time.time()})
     socketio.emit("player_joined", {"players": _session_players_list(sess)}, room=code)
+
+
+
+@socketio.on("pong_check")
+def on_pong_check(data):
+    sent_at = data.get("t")
+    if sent_at is None:
+        return
+    rtt = time.time() - sent_at
+    sid = request.sid
+    for sess in sessions.values():
+        if sid in sess["players"]:
+            sess["players"][sid]["half_rtt"] = rtt / 2.0
+            break
 
 
 @socketio.on("disconnect")
@@ -423,7 +462,10 @@ def on_buzz(data):
     already_in = any(entry["sid"] == sid for entry in sess["buzz_queue"])
     if not already_in:
         player = sess["players"][sid]
-        sess["buzz_queue"].append({"name": player["name"], "sid": sid})
+        estimated_click_time = time.time() - player.get("half_rtt", 0.0)
+        entry = {"name": player["name"], "sid": sid, "t": estimated_click_time}
+        sess["buzz_queue"].append(entry)
+        sess["buzz_queue"].sort(key=lambda e: e["t"])
         socketio.emit("buzz_update", {
             "queue": [e["name"] for e in sess["buzz_queue"]]
         }, room=code)

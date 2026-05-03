@@ -1,4 +1,5 @@
 import json
+import time
 import pytest
 import app as flask_app
 from app import app, socketio, sessions, default_boards
@@ -363,5 +364,67 @@ def test_host_remove_buzzer_pops_first(host_with_session):
     host.emit('host_remove_buzzer', {'code': code})
     assert len(sessions[code]['buzz_queue']) == 1
     assert sessions[code]['buzz_queue'][0]['name'] == 'Bob'
+    p1.disconnect()
+    p2.disconnect()
+
+
+# ── RTT / ping-pong ───────────────────────────────────────────────────────────
+
+def test_ping_check_sent_on_join(host_with_session):
+    """Player should receive a ping_check event immediately after joining."""
+    _, code = host_with_session
+    p = make_player(code, 'Alice')
+    received = p.get_received()
+    ping = next((e for e in received if e['name'] == 'ping_check'), None)
+    assert ping is not None
+    assert 't' in ping['args'][0]
+    p.disconnect()
+
+
+def test_pong_check_updates_half_rtt(host_with_session):
+    """Emitting pong_check should store half the round-trip time on the player."""
+    _, code = host_with_session
+    p = make_player(code, 'Alice')
+    p.get_received()
+    # Simulate a 100ms round-trip by sending a timestamp 100ms in the past
+    fake_sent_at = time.time() - 0.1
+    p.emit('pong_check', {'t': fake_sent_at})
+    half_rtt = next(
+        pl['half_rtt']
+        for pl in sessions[code]['players'].values()
+        if pl['name'] == 'Alice'
+    )
+    # half_rtt should be ~50ms; allow generous tolerance for test runner overhead
+    assert 0.04 < half_rtt < 0.5
+    p.disconnect()
+
+
+def test_buzz_rtt_compensation_reorders_queue(host_with_session):
+    """A player with high latency who arrives 2nd should rank 1st if their
+    estimated click time (arrival - half_rtt) is earlier."""
+    _, code = host_with_session
+    p1 = make_player(code, 'Alice')
+    p1.get_received()
+    p2 = make_player(code, 'Bob')
+    p2.get_received()
+
+    # Alice has negligible latency; Bob is 10 seconds away (exaggerated for determinism)
+    for pl in sessions[code]['players'].values():
+        if pl['name'] == 'Alice':
+            pl['half_rtt'] = 0.0
+        elif pl['name'] == 'Bob':
+            pl['half_rtt'] = 10.0
+
+    sessions[code]['active_tile'] = 'q-0-0'
+
+    # Alice arrives first at the server, then Bob — but Bob's estimated click
+    # time is (now - 10s), far earlier than Alice's (now - 0s), so Bob wins
+    p1.emit('buzz', {'code': code})
+    p2.emit('buzz', {'code': code})
+
+    queue = sessions[code]['buzz_queue']
+    assert queue[0]['name'] == 'Bob'
+    assert queue[1]['name'] == 'Alice'
+
     p1.disconnect()
     p2.disconnect()
