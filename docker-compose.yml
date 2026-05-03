@@ -1,0 +1,10 @@
+services:
+  jeopardy:
+    image: ghcr.io/oneautumnmango/jeopardy:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+    restart: unless-stopped

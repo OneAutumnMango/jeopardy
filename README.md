@@ -7,6 +7,7 @@ A self-hosted, real-time multiplayer Jeopardy web app built with Flask and Socke
 - **Multiplayer**: Host a game with a 6-letter code; players join on their phones
 - **Real-time**: All actions (tile reveals, buzzes, scores) sync instantly
 - **Buzz queue**: Tracks buzz order so second-in-line can answer if first is wrong
+- **Daily Double**: 1 hidden DD in round 1, 2 in round 2 — host sets wager, scores by wager amount
 - **Scoring**: Host marks answers correct/wrong; € scoring system
 - **Final Jeopardy**: Players wager secretly, type answers on phone, host reveals one by one
 - **Two boards**: Board 1 (€100–€500) and Board 2 (€200–€1000), 5 categories × 5 questions each
@@ -16,9 +17,53 @@ A self-hosted, real-time multiplayer Jeopardy web app built with Flask and Socke
 
 ---
 
-## Quick Start (Local Development)
+## Running with Docker
 
-### 1. Clone and set up
+The image is published to GitHub Container Registry on every push to `main`.
+
+```bash
+docker compose up -d
+docker compose down   # to stop
+```
+
+The app will be available at `http://localhost:5000`. Docker pulls `ghcr.io/oneautumnmango/jeopardy:latest` automatically — no local build needed.
+
+To get the latest image after an update:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+**LAN play (phones + laptops on the same network):** find your machine's IP and share `http://<your-lan-ip>:5000` with players.
+
+```bash
+# Linux
+ip addr show | grep "inet " | grep -v 127.0.0.1
+
+# macOS
+ipconfig getifaddr en0
+
+# Windows
+ipconfig
+```
+
+**Secret key** — create a `.env` file next to `docker-compose.yml`:
+
+```
+SECRET_KEY=your-random-string-here
+```
+
+Generate a good one with:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+> **Note**: Board data is persisted via the `./data` volume mount. Sessions (active games) are in-memory and are lost if the container restarts.
+
+---
+
+## Development
 
 ```bash
 git clone <repo-url>
@@ -27,15 +72,10 @@ python -m venv .venv
 source .venv/bin/activate        # Linux / macOS
 # .venv\Scripts\activate.bat     # Windows
 pip install -r requirements.txt
-```
-
-### 2. Run the server
-
-```bash
 python app.py
 ```
 
-Open [http://localhost:5000](http://localhost:5000).
+Open [http://localhost:5000](http://localhost:5000). The built-in Flask dev server is fine for local testing but not suitable for LAN play with multiple devices.
 
 ---
 
@@ -43,19 +83,19 @@ Open [http://localhost:5000](http://localhost:5000).
 
 ### Host
 
-1. Go to **Edit Board 1** or **Edit Board 2** in the navbar.
-2. Fill in your category titles, questions, and answers.
-3. Click **Save All Changes** (saved to your browser).
-4. Click **Host Game** → select the board → **Create Session**.
-5. Share the **6-letter code** (or the join URL) with players.
-6. When everyone has joined, click **Start Game**.
-7. On the board:
+1. Go to **Edit Boards** to fill in your categories, questions, and answers (saved to your browser).
+2. Click **Host Game** → **Create Session**.
+3. Share the **6-letter code** (or the join URL) with players.
+4. When everyone has joined, click **Start Game**.
+5. On the board:
    - Click a tile → question appears fullscreen on all screens
+   - **Shift-click** a tile → toggle it used/unused without opening it
    - Click **Reveal Answer** to show the answer
    - Click **Mark Used & Close** to close the tile (it goes dark)
-8. **Buzz Panel**: shows who buzzed first; click **Clear Buzz** after an answer
-9. **Scores Panel**: click a player's ± buttons to adjust their score (uses the current tile's point value)
-10. **Final Jeopardy**: enter the category + question in the sidebar, click **Start Final Jeopardy**, then **Reveal Question** when all wagers are in. Reveal each player's answer one by one.
+6. **Daily Double**: when a ★ tile is clicked, a splash screen appears — click through to enter the wager, then proceed as normal
+7. **Buzz Panel**: shows who buzzed first; Correct/Wrong buttons adjust score and clear the queue
+8. **Scores Panel**: manual ± buttons if you need to adjust outside of a question
+9. **Final Jeopardy**: enter the category + question in the sidebar, click **Start Final Jeopardy**, then **Reveal Question** when all wagers are in; reveal each player's answer one by one
 
 ### Players (on phones)
 
@@ -67,7 +107,7 @@ Open [http://localhost:5000](http://localhost:5000).
 
 ### Solo Play
 
-Click **Solo Play** on the home page or visit `/game/board1` / `/game/board2` directly.
+Visit `/game/board1` or `/game/board2` directly.
 
 ---
 
@@ -76,53 +116,9 @@ Click **Solo Play** on the home page or visit `/game/board1` / `/game/board2` di
 - Boards are saved in **your browser's localStorage** — they persist across page refreshes on the same device.
 - **Export JSON**: download your board as a `.json` file (for backup or sharing).
 - **Import JSON**: load a `.json` file you previously exported.
-- The server has default placeholder boards; your saved boards override them.
+- The server has default placeholder boards; your saved boards override them on the host setup page.
 
-> **Note**: Board data lives in your browser, not the server. Clearing browser data will reset boards to defaults.
-
----
-
-## Deploying (Self-Hosted)
-
-### Using Gunicorn (recommended)
-
-```bash
-pip install gunicorn
-gunicorn app:app --worker-class=gthread --threads=4 -b 0.0.0.0:8000
-```
-
-Access via `http://<your-server-ip>:8000`.
-
-### Set a secret key in production
-
-```bash
-export SECRET_KEY="your-random-secret-here"
-gunicorn app:app --worker-class=gthread --threads=4 -b 0.0.0.0:8000
-```
-
-### Important notes
-
-- **Sessions are in-memory**: restarting the server clears all active game sessions. Games in progress will need to be restarted.
-- **Board data is per-browser**: players' phones don't need to store any board data; only the host's browser needs it.
-- For HTTPS (required for LAN or internet play), put the app behind nginx with a TLS certificate.
-
-### nginx reverse proxy example
-
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-    }
-}
-```
-
-The `Upgrade` / `Connection` headers are required for WebSocket (Socket.IO) support.
+> **Note**: Board data lives in your browser. Clearing browser data will reset boards to defaults.
 
 ---
 
@@ -136,7 +132,7 @@ Tests cover:
 - All HTTP routes (200/404 responses)
 - Admin board save endpoint
 - Board data model (point values, structure, ID uniqueness, load/save)
-- SocketIO events: session creation, player join/reconnect, game flow, buzz ordering, scoring, Final Jeopardy wager caps and score adjustments
+- SocketIO events: session creation, player join/reconnect, game flow, buzz ordering, scoring, Daily Double wager caps, Final Jeopardy wager caps and score adjustments
 
 ---
 
@@ -145,6 +141,8 @@ Tests cover:
 ```
 jeopardy/
 ├── app.py                    # Flask app: HTTP routes + all SocketIO handlers
+├── Dockerfile
+├── docker-compose.yml
 ├── data/
 │   └── boards.json           # Default board data (auto-generated; gitignored)
 ├── static/
