@@ -8,11 +8,17 @@ let scores = [];
 let currentBuzzQueue = [];   // latest queue from server
 let overlayBuzzerIndex = 0;  // which buzzer is currently "up"
 
+// Daily Double overlay state
+let ddData = null;   // { question_id, points, eligible_player, player_names, max_cap }
+let ddPhase = 'splash';
+
 // Final Jeopardy overlay state
 let foPhase = 'wager';        // 'wager' | 'answer'
 let foIntroPhase = 'title';   // 'title' | 'category' | 'active'
 let foWagered = new Set();
 let foAnswered = new Set();
+let foRevealed = new Set();
+let foScored = new Set();
 let foCategory = '';
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -27,6 +33,17 @@ socket.on('player_joined', ({ players }) => {
 socket.on('scores_updated', ({ scores: s }) => {
   scores = s;
   renderScores();
+  const foScores = document.getElementById('fo-final-scores');
+  if (!foScores) return;
+  const eligible = scores.filter(p => p.score >= 0);
+  const allDone = foRevealed.size > 0
+    && foScored.size >= foRevealed.size
+    && foRevealed.size >= eligible.length;
+  if (!foScores.classList.contains('hidden')) {
+    renderFoFinalScores();
+  } else if (allDone) {
+    renderFoFinalScores();
+  }
 });
 
 socket.on('restore_used', ({ used_tiles }) => {
@@ -36,10 +53,30 @@ socket.on('restore_used', ({ used_tiles }) => {
   });
 });
 
-socket.on('tile_revealed', ({ question_id, question, points }) => {
-  activeTile = { question_id, question, points };
+socket.on('daily_double_revealed', (data) => {
+  ddData = data;
+  activeTile = { question_id: data.question_id, points: data.points };
   overlayBuzzerIndex = 0;
-  openHostOverlay(question, points);
+  openDdOverlay(data);
+});
+
+socket.on('dd_tiles_set', ({ question_ids }) => {
+  question_ids.forEach(qid => {
+    const cell = document.getElementById(qid);
+    if (cell && !cell.classList.contains('used')) {
+      cell.classList.add('daily-double');
+    }
+  });
+});
+
+socket.on('tile_revealed', ({ question_id, question, points, is_daily_double, dd_player, dd_wager }) => {
+  if (is_daily_double) {
+    activeTile = { question_id, question, points: dd_wager, is_daily_double: true, dd_player };
+  } else {
+    activeTile = { question_id, question, points };
+  }
+  overlayBuzzerIndex = 0;
+  openHostOverlay(question, is_daily_double ? dd_wager : points, is_daily_double, dd_player, dd_wager);
 });
 
 socket.on('answer_revealed', ({ answer }) => {
@@ -108,12 +145,20 @@ socket.on('final_answer_submitted', ({ name }) => {
 socket.on('all_answers_in', () => {
   document.getElementById('fo-phase-label').textContent = 'All answers in — reveal one by one';
   addFinalNote('✓ All answers in');
+  // Enable all reveal buttons now that everyone has answered
+  document.querySelectorAll('[id^="fo-reveal-btn-"]').forEach(btn => btn.disabled = false);
 });
 
 socket.on('final_answer_revealed', ({ name, answer, wager }) => {
   updateFinalAnswerReveal(name, answer, wager);
-  const ansDiv = document.getElementById(`fo-ans-text-${cssId(name)}`);
+  const id = cssId(name);
+  const ansDiv = document.getElementById(`fo-ans-text-${id}`);
   if (ansDiv) { ansDiv.textContent = `"${answer}" — wagered €${wager}`; ansDiv.classList.remove('hidden'); }
+  const revealBtn = document.getElementById(`fo-reveal-btn-${id}`);
+  if (revealBtn) revealBtn.classList.add('hidden');
+  const scoreBtns = document.getElementById(`fo-score-btns-${id}`);
+  if (scoreBtns) scoreBtns.classList.remove('hidden');
+  foRevealed.add(name);
 });
 
 socket.on('final_jeopardy_started', ({ category }) => {
@@ -134,12 +179,30 @@ socket.on('final_setup', (setup) => {
 });
 
 // ── Overlay helpers ─────────────────────────────────────────────────────────
-function openHostOverlay(question, points) {
+function openHostOverlay(question, points, isDailyDouble, ddPlayer) {
   const overlay = document.getElementById('host-tile-overlay');
-  document.getElementById('host-overlay-points').textContent = `€${points}`;
+  const pointsEl = document.getElementById('host-overlay-points');
+  if (isDailyDouble) {
+    pointsEl.textContent = `DAILY DOUBLE — ${ddPlayer} wagered €${points}`;
+  } else {
+    pointsEl.textContent = `€${points}`;
+  }
   document.getElementById('host-overlay-text').textContent = question;
   document.getElementById('host-overlay-text').className = 'overlay-text question-text';
   document.getElementById('host-reveal-answer-btn').disabled = false;
+
+  // For DD, hide the buzz queue and pre-populate score controls
+  const buzzQueue = document.getElementById('overlay-buzz-queue');
+  const ctrl = document.getElementById('overlay-score-controls');
+  const nameEl = document.getElementById('overlay-buzzer-name');
+  if (isDailyDouble) {
+    if (buzzQueue) buzzQueue.innerHTML = '';
+    if (ctrl && nameEl) {
+      nameEl.textContent = ddPlayer || '';
+      ctrl.classList.remove('hidden');
+    }
+  }
+
   overlay.classList.remove('hidden');
   overlay.offsetHeight;
   overlay.classList.add('active');
@@ -233,21 +296,29 @@ function renderOverlayBuzzQueue() {
 // ── Overlay scoring ───────────────────────────────────────────────────────────
 function overlayScoreCorrect() {
   if (!activeTile) return;
-  const name = currentBuzzQueue[overlayBuzzerIndex];
+  const name = activeTile.is_daily_double ? activeTile.dd_player : currentBuzzQueue[overlayBuzzerIndex];
   if (!name) return;
   socket.emit('host_reveal_answer', { code: SESSION_CODE, question_id: activeTile.question_id });
   socket.emit('host_score_correct', { code: SESSION_CODE, player_name: name, points: activeTile.points });
-  socket.emit('host_clear_buzz', { code: SESSION_CODE });
+  if (activeTile.is_daily_double) {
+    hostMarkUsed();
+  } else {
+    socket.emit('host_clear_buzz', { code: SESSION_CODE });
+  }
 }
 
 function overlayScoreWrong() {
   if (!activeTile) return;
-  const name = currentBuzzQueue[overlayBuzzerIndex];
+  const name = activeTile.is_daily_double ? activeTile.dd_player : currentBuzzQueue[overlayBuzzerIndex];
   if (!name) return;
   socket.emit('host_score_wrong', { code: SESSION_CODE, player_name: name, points: activeTile.points });
-  // Advance to next buzzer without modifying server queue
-  overlayBuzzerIndex++;
-  renderOverlayBuzzQueue();
+  if (activeTile.is_daily_double) {
+    hostMarkUsed();
+  } else {
+    // Advance to next buzzer without modifying server queue
+    overlayBuzzerIndex++;
+    renderOverlayBuzzQueue();
+  }
 }
 
 // ── Board clicks ─────────────────────────────────────────────────────────────
@@ -315,6 +386,8 @@ function openFinalOverlay(category) {
   foIntroPhase = 'title';
   foWagered = new Set();
   foAnswered = new Set();
+  foRevealed = new Set();
+  foScored = new Set();
 
   // Reset screens
   document.getElementById('fo-title-screen').classList.remove('hidden');
@@ -327,6 +400,9 @@ function openFinalOverlay(category) {
 
   // Reset main-screen state
   document.getElementById('fo-question-wrap').classList.add('hidden');
+  document.getElementById('fo-final-scores').classList.add('hidden');
+  document.getElementById('fo-players').classList.remove('hidden');
+  document.getElementById('fo-phase-label').classList.remove('hidden');
   document.getElementById('fo-phase-label').textContent = 'Waiting for wagers…';
   document.getElementById('fo-proceed-btn').disabled = true;
 
@@ -379,17 +455,21 @@ function renderFoPlayers() {
   } else {
     el.innerHTML = eligible.map(({ name }) => `
       <div class="fo-player-row" id="fo-row-${cssId(name)}">
-        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.25rem">
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem">
           <span class="fo-player-name">${escHtml(name)}</span>
           <span class="status-badge ${foAnswered.has(name) ? 'in' : 'waiting'}" id="fo-a-${cssId(name)}">
             ${foAnswered.has(name) ? '✓ answered' : '⋯ waiting'}
           </span>
         </div>
-        <div id="fo-ans-text-${cssId(name)}" class="fo-answer-reveal hidden"></div>
-        <div class="fo-player-btns">
-          <button class="btn btn-secondary btn-small" onclick="revealFinalAnswer('${escHtml(name)}')">Reveal</button>
-          <button class="btn btn-success btn-small" onclick="finalCorrect('${escHtml(name)}')">✓ Correct</button>
-          <button class="btn btn-danger btn-small" onclick="finalWrong('${escHtml(name)}')">✗ Wrong</button>
+        <button id="fo-reveal-btn-${cssId(name)}" class="btn btn-secondary"
+          style="width:100%;padding:0.75rem;font-size:1rem;margin-bottom:0.5rem"
+          disabled
+          onclick="revealFinalAnswer('${escHtml(name)}')">▶ Reveal Answer</button>
+        <div id="fo-ans-text-${cssId(name)}" class="fo-answer-reveal hidden"
+          style="padding:0.75rem;background:rgba(255,255,255,0.07);border-radius:8px;text-align:center;margin-bottom:0.5rem"></div>
+        <div id="fo-score-btns-${cssId(name)}" class="hidden" style="display:flex;gap:0.5rem">
+          <button class="btn btn-success" style="flex:1" onclick="finalCorrect('${escHtml(name)}')">✓ Correct</button>
+          <button class="btn btn-danger" style="flex:1" onclick="finalWrong('${escHtml(name)}')">✗ Wrong</button>
         </div>
       </div>
     `).join('');
@@ -429,15 +509,39 @@ function updateFinalAnswerReveal(name, answer, wager) {
   }
 }
 
+function renderFoFinalScores() {
+  const wrap = document.getElementById('fo-final-scores');
+  const list = document.getElementById('fo-final-scores-list');
+  if (!wrap || !list) return;
+  const sorted = [...scores].sort((a, b) => b.score - a.score);
+  list.innerHTML = sorted.map((s, i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;
+                padding:0.4rem 0.75rem;background:rgba(255,255,255,0.06);border-radius:6px">
+      <span style="color:var(--muted);font-size:0.85rem;min-width:1.5rem">${i + 1}.</span>
+      <span style="flex:1;font-family:'Oswald',sans-serif;color:var(--text)">${escHtml(s.name)}</span>
+      <span style="font-family:'Oswald',sans-serif;color:var(--gold);font-size:1.1rem">€${s.score}</span>
+    </div>
+  `).join('');
+  // Hide player rows and show final scores as the new screen
+  document.getElementById('fo-players').classList.add('hidden');
+  document.getElementById('fo-question-wrap').classList.add('hidden');
+  document.getElementById('fo-phase-label').classList.add('hidden');
+  wrap.classList.remove('hidden');
+}
+
 function revealFinalAnswer(name) {
   socket.emit('host_reveal_final_answer', { code: SESSION_CODE, player_name: name });
 }
 
 function finalCorrect(name) {
+  foScored.add(name);
+  document.getElementById(`fo-score-btns-${cssId(name)}`)?.classList.add('hidden');
   socket.emit('host_final_correct', { code: SESSION_CODE, player_name: name });
 }
 
 function finalWrong(name) {
+  foScored.add(name);
+  document.getElementById(`fo-score-btns-${cssId(name)}`)?.classList.add('hidden');
   socket.emit('host_final_wrong', { code: SESSION_CODE, player_name: name });
 }
 
@@ -445,6 +549,61 @@ function endGame() {
   if (confirm('End the game and show final scores?')) {
     socket.emit('host_end_game', { code: SESSION_CODE });
   }
+}
+
+// ── Daily Double Overlay ──────────────────────────────────────────────────────
+function openDdOverlay(data) {
+  ddPhase = 'splash';
+  document.getElementById('dd-splash-screen').classList.remove('hidden');
+  document.getElementById('dd-wager-screen').classList.add('hidden');
+
+  // Pre-populate wager screen
+  document.getElementById('dd-tile-points').textContent = `Tile value: €${data.points}`;
+  const sel = document.getElementById('dd-player-select');
+  sel.innerHTML = data.player_names.map(n =>
+    `<option value="${escHtml(n)}" ${n === data.eligible_player ? 'selected' : ''}>${escHtml(n)}</option>`
+  ).join('');
+  document.getElementById('dd-wager-input').value = '';
+  updateDdWagerLimits();
+
+  const overlay = document.getElementById('dd-overlay');
+  overlay.classList.remove('hidden');
+  overlay.offsetHeight;
+  overlay.classList.add('active');
+}
+
+function ddAdvance() {
+  if (ddPhase !== 'splash') return;
+  ddPhase = 'wager';
+  document.getElementById('dd-splash-screen').classList.add('hidden');
+  document.getElementById('dd-wager-screen').classList.remove('hidden');
+}
+
+function updateDdWagerLimits() {
+  if (!ddData) return;
+  const playerName = document.getElementById('dd-player-select').value;
+  const playerScore = (scores.find(s => s.name === playerName) || {}).score || 0;
+  const cap = ddData.max_cap;
+  const maxWager = playerScore > 0 ? Math.max(cap, playerScore) : cap;
+  document.getElementById('dd-wager-limits').textContent = `Min: €5  |  Max: €${maxWager}`;
+  document.getElementById('dd-wager-input').max = maxWager;
+}
+
+function ddConfirmWager() {
+  if (!ddData) return;
+  const playerName = document.getElementById('dd-player-select').value;
+  const wager = parseInt(document.getElementById('dd-wager-input').value) || 5;
+  socket.emit('host_dd_set_wager', { code: SESSION_CODE, player_name: playerName, wager });
+  closeDdOverlay();
+}
+
+function closeDdOverlay() {
+  const overlay = document.getElementById('dd-overlay');
+  overlay.classList.remove('active');
+  overlay.addEventListener('transitionend', () => {
+    overlay.classList.add('hidden');
+  }, { once: true });
+  ddData = null;
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────

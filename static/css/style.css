@@ -1225,3 +1225,9 @@ body {
   font-size: 0.9rem;
   letter-spacing: 0.05em;
 }
+
+/* ── Daily Double cell indicator ── */
+.question-cell.daily-double .points-display::after {
+  content: ' ★';
+  color: var(--gold);
+}

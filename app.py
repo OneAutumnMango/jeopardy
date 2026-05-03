@@ -64,6 +64,12 @@ def save_boards(data):
         json.dump(data, f, indent=2)
 
 
+def _pick_daily_doubles(board: dict, count: int = 2) -> set:
+    """Randomly select `count` question IDs from a board for Daily Double."""
+    all_ids = [q["id"] for cat in board.get("categories", []) for q in cat.get("questions", [])]
+    return set(random.sample(all_ids, min(count, len(all_ids))))
+
+
 # ── Session helpers ──────────────────────────────────────────────────────────
 
 def _gen_code() -> str:
@@ -245,6 +251,9 @@ def on_host_create_session(data):
         "buzz_queue": [],
         "active_tile": None,
         "phase": "lobby",
+        "last_correct_sid": None,
+        "daily_doubles": set(),
+        "dd_state": None,
         "final_setup": data.get("final_setup", {"category": "Final Jeopardy", "question": "", "answer": ""}),
         "final": {
             "category": "",
@@ -272,6 +281,8 @@ def on_host_join_room(data):
     emit("scores_updated", {"scores": _scores_list(sess)})
     emit("restore_used", {"used_tiles": list(sess["used_tiles"])})
     emit("final_setup", sess.get("final_setup", {"category": "Final Jeopardy", "question": "", "answer": ""}))
+    if sess.get("daily_doubles"):
+        emit("dd_tiles_set", {"question_ids": list(sess["daily_doubles"])})
 
 
 @socketio.on("player_join")
@@ -355,8 +366,11 @@ def on_host_start_game(data):
     code = data.get("code", "")
     if code not in sessions:
         return
-    sessions[code]["phase"] = "game"
+    sess = sessions[code]
+    sess["phase"] = "game"
+    sess["daily_doubles"] = _pick_daily_doubles(sess["board"], 1)
     socketio.emit("game_started", {}, room=code)
+    socketio.emit("dd_tiles_set", {"question_ids": list(sess["daily_doubles"])}, room=code)
 
 
 @socketio.on("host_reveal_tile")
@@ -368,11 +382,27 @@ def on_host_reveal_tile(data):
     qid = data["question_id"]
     sess["active_tile"] = qid
     q_data = _find_question(sess["board"], qid)
-    socketio.emit("tile_revealed", {
-        "question_id": qid,
-        "question": q_data["question"],
-        "points": q_data["points"]
-    }, room=code)
+
+    if qid in sess.get("daily_doubles", set()):
+        last_sid = sess.get("last_correct_sid")
+        eligible_name = None
+        if last_sid and last_sid in sess["players"]:
+            eligible_name = sess["players"][last_sid]["name"]
+        player_names = [p["name"] for p in sess["players"].values() if p["active"]]
+        max_cap = 2000 if sess.get("round", 1) == 2 else 1000
+        socketio.emit("daily_double_revealed", {
+            "question_id": qid,
+            "points": q_data["points"],
+            "eligible_player": eligible_name,
+            "player_names": player_names,
+            "max_cap": max_cap
+        }, room=code)
+    else:
+        socketio.emit("tile_revealed", {
+            "question_id": qid,
+            "question": q_data["question"],
+            "points": q_data["points"]
+        }, room=code)
 
 
 @socketio.on("host_reveal_answer")
@@ -399,6 +429,7 @@ def on_host_mark_used(data):
     sess["used_tiles"].add(qid)
     sess["active_tile"] = None
     sess["buzz_queue"] = []
+    sess["dd_state"] = None
     socketio.emit("tile_used", {"question_id": qid}, room=code)
     socketio.emit("buzz_update", {"queue": []}, room=code)
     # Check if all tiles on current board are used
@@ -430,7 +461,10 @@ def on_host_next_round(data):
     sess["used_tiles"] = set()
     sess["active_tile"] = None
     sess["buzz_queue"] = []
+    sess["dd_state"] = None
+    sess["daily_doubles"] = _pick_daily_doubles(sess["board"], 2)
     socketio.emit("round_changed", {"round": 2}, room=code)
+    socketio.emit("dd_tiles_set", {"question_ids": list(sess["daily_doubles"])}, room=code)
 
 
 @socketio.on("host_remove_buzzer")
@@ -488,7 +522,13 @@ def on_host_score_correct(data):
     if code not in sessions:
         return
     sess = sessions[code]
-    _adjust_score(sess, data["player_name"], data["points"])
+    player_name = data["player_name"]
+    sid_match = next(
+        (sid for sid, p in sess["players"].items() if p["name"] == player_name), None
+    )
+    if sid_match:
+        sess["last_correct_sid"] = sid_match
+    _adjust_score(sess, player_name, data["points"])
     socketio.emit("scores_updated", {"scores": _scores_list(sess)}, room=code)
 
 
@@ -500,6 +540,45 @@ def on_host_score_wrong(data):
     sess = sessions[code]
     _adjust_score(sess, data["player_name"], -data["points"])
     socketio.emit("scores_updated", {"scores": _scores_list(sess)}, room=code)
+
+
+# ── SocketIO: Daily Double ────────────────────────────────────────────────────
+
+@socketio.on("host_dd_set_wager")
+def on_host_dd_set_wager(data):
+    code = data.get("code", "")
+    if code not in sessions:
+        return
+    sess = sessions[code]
+    qid = sess.get("active_tile")
+    if not qid:
+        return
+    q_data = _find_question(sess["board"], qid)
+    player_name = data.get("player_name", "")
+    max_cap = 2000 if sess.get("round", 1) == 2 else 1000
+    player_score = next(
+        (p["score"] for p in sess["players"].values() if p["name"] == player_name), 0
+    )
+    max_wager = max(max_cap, player_score) if player_score > 0 else max_cap
+    wager = max(5, min(int(data.get("wager", 5)), max_wager))
+    sess["dd_state"] = {
+        "question_id": qid,
+        "player_name": player_name,
+        "wager": wager,
+        "points": q_data["points"]
+    }
+    socketio.emit("daily_double_wager_set", {
+        "player_name": player_name,
+        "wager": wager
+    }, room=code)
+    socketio.emit("tile_revealed", {
+        "question_id": qid,
+        "question": q_data["question"],
+        "points": q_data["points"],
+        "is_daily_double": True,
+        "dd_player": player_name,
+        "dd_wager": wager
+    }, room=code)
 
 
 # ── SocketIO: Final Jeopardy ──────────────────────────────────────────────────

@@ -428,3 +428,146 @@ def test_buzz_rtt_compensation_reorders_queue(host_with_session):
 
     p1.disconnect()
     p2.disconnect()
+
+
+# ── Daily Double ──────────────────────────────────────────────────────────────
+
+@pytest.fixture
+def host_with_round2_session(host):
+    """Host with session switched to round 2 (board2 active, daily_doubles assigned)."""
+    boards = default_boards()
+    host.emit('host_create_session', {'boards': boards})
+    received = host.get_received()
+    code = next(e for e in received if e['name'] == 'session_created')['args'][0]['code']
+    # Add a player before the game starts so scoring tests work
+    p = socketio.test_client(app)
+    p.emit('player_join', {'code': code, 'name': 'Alice'})
+    p.get_received()
+    host.emit('host_start_game', {'code': code})
+    host.get_received()
+    host.emit('host_next_round', {'code': code})
+    host.get_received()
+    yield host, code
+    p.disconnect()
+
+
+def test_daily_doubles_assigned_on_round2(host_with_round2_session):
+    _, code = host_with_round2_session
+    sess = sessions[code]
+    assert len(sess['daily_doubles']) == 2
+    all_ids = {q['id'] for cat in sess['board']['categories'] for q in cat['questions']}
+    assert sess['daily_doubles'].issubset(all_ids)
+
+
+def test_daily_double_assigned_in_round1(host):
+    boards = default_boards()
+    host.emit('host_create_session', {'boards': boards})
+    received = host.get_received()
+    code = next(e for e in received if e['name'] == 'session_created')['args'][0]['code']
+    # No DDs before game starts
+    assert len(sessions[code].get('daily_doubles', set())) == 0
+    p = socketio.test_client(app)
+    p.emit('player_join', {'code': code, 'name': 'Alice'})
+    p.get_received()
+    host.emit('host_start_game', {'code': code})
+    host.get_received()
+    # Exactly 1 DD after game starts in round 1
+    assert len(sessions[code]['daily_doubles']) == 1
+    all_ids = {q['id'] for cat in sessions[code]['board']['categories'] for q in cat['questions']}
+    assert sessions[code]['daily_doubles'].issubset(all_ids)
+    p.disconnect()
+
+
+def test_dd_tile_emits_daily_double_revealed(host_with_round2_session):
+    host, code = host_with_round2_session
+    dd_qid = next(iter(sessions[code]['daily_doubles']))
+    host.emit('host_reveal_tile', {'code': code, 'question_id': dd_qid})
+    received = host.get_received()
+    dd_event = next((e for e in received if e['name'] == 'daily_double_revealed'), None)
+    tile_event = next((e for e in received if e['name'] == 'tile_revealed'), None)
+    assert dd_event is not None
+    assert tile_event is None
+    assert dd_event['args'][0]['question_id'] == dd_qid
+
+
+def test_non_dd_tile_emits_tile_revealed(host_with_round2_session):
+    host, code = host_with_round2_session
+    all_ids = [q['id'] for cat in sessions[code]['board']['categories'] for q in cat['questions']]
+    non_dd_qid = next(qid for qid in all_ids if qid not in sessions[code]['daily_doubles'])
+    host.emit('host_reveal_tile', {'code': code, 'question_id': non_dd_qid})
+    received = host.get_received()
+    assert next((e for e in received if e['name'] == 'tile_revealed'), None) is not None
+    assert next((e for e in received if e['name'] == 'daily_double_revealed'), None) is None
+
+
+def test_last_correct_sid_updated_on_correct_answer(host_with_session):
+    host, code = host_with_session
+    p = make_player(code, 'Alice')
+    p.get_received()
+    host.get_received()
+    host.emit('host_score_correct', {'code': code, 'player_name': 'Alice', 'points': 200})
+    alice_sid = next(sid for sid, pl in sessions[code]['players'].items() if pl['name'] == 'Alice')
+    assert sessions[code]['last_correct_sid'] == alice_sid
+    p.disconnect()
+
+
+def test_dd_eligible_player_is_last_correct(host_with_round2_session):
+    host, code = host_with_round2_session
+    host.get_received()
+    host.emit('host_score_correct', {'code': code, 'player_name': 'Alice', 'points': 400})
+    host.get_received()
+    dd_qid = next(iter(sessions[code]['daily_doubles']))
+    host.emit('host_reveal_tile', {'code': code, 'question_id': dd_qid})
+    received = host.get_received()
+    dd_event = next(e for e in received if e['name'] == 'daily_double_revealed')
+    assert dd_event['args'][0]['eligible_player'] == 'Alice'
+
+
+def test_dd_eligible_player_is_none_when_no_correct_yet(host_with_round2_session):
+    host, code = host_with_round2_session
+    dd_qid = next(iter(sessions[code]['daily_doubles']))
+    host.emit('host_reveal_tile', {'code': code, 'question_id': dd_qid})
+    received = host.get_received()
+    dd_event = next(e for e in received if e['name'] == 'daily_double_revealed')
+    assert dd_event['args'][0]['eligible_player'] is None
+
+
+def test_dd_wager_minimum_5(host_with_round2_session):
+    host, code = host_with_round2_session
+    host.get_received()
+    sessions[code]['active_tile'] = next(iter(sessions[code]['daily_doubles']))
+    host.emit('host_dd_set_wager', {'code': code, 'player_name': 'Alice', 'wager': 0})
+    host.get_received()
+    assert sessions[code]['dd_state']['wager'] == 5
+
+
+def test_dd_wager_capped_at_max_cap_when_score_low(host_with_round2_session):
+    host, code = host_with_round2_session
+    host.get_received()
+    # Alice has score 0 — round 2 cap is €2000
+    sessions[code]['active_tile'] = next(iter(sessions[code]['daily_doubles']))
+    host.emit('host_dd_set_wager', {'code': code, 'player_name': 'Alice', 'wager': 9999})
+    host.get_received()
+    assert sessions[code]['dd_state']['wager'] == 2000
+
+
+def test_dd_wager_can_exceed_cap_when_score_higher(host_with_round2_session):
+    host, code = host_with_round2_session
+    host.get_received()
+    host.emit('host_score_correct', {'code': code, 'player_name': 'Alice', 'points': 3000})
+    host.get_received()
+    sessions[code]['active_tile'] = next(iter(sessions[code]['daily_doubles']))
+    host.emit('host_dd_set_wager', {'code': code, 'player_name': 'Alice', 'wager': 2800})
+    host.get_received()
+    assert sessions[code]['dd_state']['wager'] == 2800  # within max(2000, 3000) = 3000
+
+
+def test_dd_wager_negative_score_uses_flat_cap(host_with_round2_session):
+    host, code = host_with_round2_session
+    host.get_received()
+    host.emit('host_score_wrong', {'code': code, 'player_name': 'Alice', 'points': 500})
+    host.get_received()
+    sessions[code]['active_tile'] = next(iter(sessions[code]['daily_doubles']))
+    host.emit('host_dd_set_wager', {'code': code, 'player_name': 'Alice', 'wager': 9999})
+    host.get_received()
+    assert sessions[code]['dd_state']['wager'] == 2000  # flat cap, negative score ignored

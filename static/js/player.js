@@ -54,14 +54,33 @@ socket.on('round_changed', () => {
   showPhase('game');
 });
 
-socket.on('tile_revealed', ({ question, points }) => {
-  document.getElementById('current-points').textContent = `€${points}`;
+socket.on('daily_double_revealed', ({ eligible_player }) => {
+  document.getElementById('question-display').classList.add('hidden');
+  document.getElementById('answer-display').classList.add('hidden');
+  canBuzz = false;
+  document.getElementById('buzz-btn').disabled = true;
+  document.getElementById('dd-player-announcement').textContent =
+    eligible_player ? `${eligible_player}'s Daily Double` : 'Daily Double!';
+  document.getElementById('dd-wager-announcement').textContent = 'Waiting for wager…';
+  document.getElementById('dd-announcement').classList.remove('hidden');
+});
+
+socket.on('daily_double_wager_set', ({ player_name, wager }) => {
+  document.getElementById('dd-player-announcement').textContent = `${player_name}'s Daily Double`;
+  document.getElementById('dd-wager-announcement').textContent = `Wager: €${wager}`;
+});
+
+socket.on('tile_revealed', ({ question, points, is_daily_double, dd_player, dd_wager }) => {
+  document.getElementById('dd-announcement').classList.add('hidden');
+  document.getElementById('current-points').textContent = is_daily_double
+    ? `DAILY DOUBLE — €${dd_wager}`
+    : `€${points}`;
   document.getElementById('current-question').textContent = question;
   document.getElementById('question-display').classList.remove('hidden');
   document.getElementById('answer-display').classList.add('hidden');
-  canBuzz = true;
+  canBuzz = !is_daily_double;
   const btn = document.getElementById('buzz-btn');
-  btn.disabled = false;
+  btn.disabled = !!is_daily_double;
   btn.classList.remove('buzzed');
   document.getElementById('buzz-status').textContent = '';
   document.getElementById('buzz-status').className = 'buzz-status';
@@ -75,6 +94,7 @@ socket.on('answer_revealed', ({ answer }) => {
 });
 
 socket.on('tile_used', () => {
+  document.getElementById('dd-announcement').classList.add('hidden');
   document.getElementById('question-display').classList.add('hidden');
   document.getElementById('answer-display').classList.add('hidden');
   canBuzz = false;
@@ -106,6 +126,7 @@ socket.on('scores_updated', ({ scores }) => {
     myScore = me.score;
     document.getElementById('my-score').textContent = `€${myScore}`;
     document.getElementById('wager-my-score').textContent = `€${myScore}`;
+    document.getElementById('wager-max-display').textContent = `€${Math.max(myScore, 0)}`;
     const wagerInput = document.getElementById('wager-input');
     wagerInput.max = Math.max(myScore, 0);
   }
@@ -126,6 +147,7 @@ socket.on('final_jeopardy_started', ({ category }) => {
   showPhase('final');
   document.getElementById('final-category-text').textContent = category;
   document.getElementById('wager-my-score').textContent = `€${myScore}`;
+  document.getElementById('wager-max-display').textContent = `€${Math.max(myScore, 0)}`;
   document.getElementById('wager-input').max = Math.max(myScore, 0);
 
   // Only eligible players (score >= 0) can wager
@@ -153,6 +175,8 @@ socket.on('wager_locked', ({ amount }) => {
 });
 
 socket.on('final_answer_revealed', ({ name, answer, wager }) => {
+  // Lock answer submission once reveals begin
+  document.getElementById('answer-section').classList.add('hidden');
   // Append revealed card to final leaderboard area
   const container = document.getElementById('final-leaderboard');
   const card = document.createElement('div');
