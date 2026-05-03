@@ -199,6 +199,15 @@ body {
 .admin-actions {
   display: flex;
   gap: 0.75rem;
+  align-items: center;
+}
+.admin-actions .btn {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.9rem;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .admin-grid {
@@ -1163,4 +1172,56 @@ body {
   padding: 0.45rem 0.6rem;
   border-left: 1px solid var(--border);
   font-size: 0.75rem;
+}
+
+/* ── Final Jeopardy overlay player rows ──────────────────────────────────── */
+.fo-player-row {
+  background: rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.4rem;
+}
+.fo-player-name {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1rem;
+  color: var(--text);
+}
+.fo-player-btns {
+  display: flex;
+  gap: 4px;
+  margin-top: 0.3rem;
+  flex-wrap: wrap;
+}
+.fo-answer-reveal {
+  color: var(--gold);
+  font-size: 0.9rem;
+  margin: 0.25rem 0;
+  font-style: italic;
+}
+
+/* ── Final Jeopardy intro splash screens ─────────────────────────────────── */
+.fo-splash {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  cursor: pointer;
+  user-select: none;
+  padding: 2rem;
+}
+.fo-splash-text {
+  font-family: 'Oswald', sans-serif;
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  text-align: center;
+  line-height: 1.1;
+}
+.fo-splash-hint {
+  margin-top: 1.5rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
 }

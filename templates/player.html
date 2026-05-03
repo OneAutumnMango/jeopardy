@@ -45,33 +45,40 @@
 
   <!-- ── FINAL JEOPARDY PHASE ── -->
   <div id="phase-final" class="hidden final-section">
-    <div class="final-category-display" id="final-category-text"></div>
+
+    <!-- Title + category (always visible) -->
+    <div style="text-align:center;padding:1.5rem 0 1rem">
+      <div style="font-family:'Oswald',sans-serif;color:var(--gold);font-size:2.2rem;letter-spacing:0.05em;margin-bottom:0.75rem">
+        FINAL JEOPARDY!
+      </div>
+      <div id="final-category-text" style="font-family:'Oswald',sans-serif;color:var(--text);font-size:1.4rem;background:var(--cell-bg);border-radius:8px;padding:0.6rem 1.5rem;display:inline-block"></div>
+    </div>
 
     <!-- Wager section -->
-    <div id="wager-section">
-      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:0.5rem">
-        Your current score: <strong id="wager-my-score" style="color:var(--gold)">€0</strong><br>
-        Wager between €0 and your current score.
+    <div id="wager-section" style="margin-top:1rem">
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:0.75rem;text-align:center">
+        Your score: <strong id="wager-my-score" style="color:var(--gold)">€0</strong><br>
+        Enter your wager (€0 – your score)
       </p>
-      <input id="wager-input" class="final-input" type="number" min="0" placeholder="Enter wager amount">
+      <input id="wager-input" class="final-input" type="number" min="0" placeholder="Enter wager amount" style="width:100%">
       <button class="btn btn-gold" style="width:100%;margin-top:0.75rem" onclick="submitWager()">Lock In Wager</button>
     </div>
-    <div id="wager-submitted-msg" class="submitted-msg hidden">Wager locked in! Waiting for question…</div>
+    <div id="wager-submitted-msg" class="submitted-msg hidden"></div>
 
-    <!-- Question -->
-    <div id="final-question-display" class="hidden">
+    <!-- Question (revealed by host after all wagers in) -->
+    <div id="final-question-display" class="hidden" style="margin-top:1.5rem">
       <div id="final-question-text" class="player-question-text" style="text-align:center;padding:1rem"></div>
     </div>
 
     <!-- Answer section -->
-    <div id="answer-section" class="hidden">
-      <input id="final-answer-input" class="final-input" type="text" placeholder="Your answer…">
+    <div id="answer-section" class="hidden" style="margin-top:1rem">
+      <input id="final-answer-input" class="final-input" type="text" placeholder="Your answer…" style="width:100%">
       <button class="btn btn-gold" style="width:100%;margin-top:0.75rem" onclick="submitFinalAnswer()">Submit Answer</button>
     </div>
     <div id="answer-submitted-msg" class="submitted-msg hidden">Answer submitted! Waiting for host…</div>
 
     <!-- Final reveals leaderboard -->
-    <div id="final-leaderboard" class="leaderboard"></div>
+    <div id="final-leaderboard" class="leaderboard" style="margin-top:1.5rem"></div>
   </div>
 
   <!-- ── ENDED PHASE ── -->

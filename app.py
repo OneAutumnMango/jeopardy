@@ -3,7 +3,7 @@ import os
 import random
 import string
 
-from flask import Flask, render_template, request, jsonify, abort
+from flask import Flask, render_template, request, jsonify, abort, redirect, url_for
 from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__)
@@ -142,7 +142,7 @@ def admin(board_id):
     boards = load_boards()
     if board_id not in boards:
         abort(404)
-    return render_template("admin.html", board=boards[board_id], board_id=board_id)
+    return redirect(url_for("edit_boards"))
 
 
 @app.route("/admin/<board_id>/save", methods=["POST"])
@@ -366,6 +366,17 @@ def on_host_mark_used(data):
     total = sum(len(cat["questions"]) for cat in sess["board"]["categories"])
     if len(sess["used_tiles"]) >= total and sess["phase"] == "game":
         socketio.emit("round_complete", {"round": sess["round"]}, room=code)
+
+
+@socketio.on("host_unmark_tile")
+def on_host_unmark_tile(data):
+    code = data.get("code", "")
+    if code not in sessions:
+        return
+    sess = sessions[code]
+    qid = data["question_id"]
+    sess["used_tiles"].discard(qid)
+    socketio.emit("tile_restored", {"question_id": qid}, room=code)
 
 
 @socketio.on("host_next_round")

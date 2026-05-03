@@ -8,6 +8,13 @@ let scores = [];
 let currentBuzzQueue = [];   // latest queue from server
 let overlayBuzzerIndex = 0;  // which buzzer is currently "up"
 
+// Final Jeopardy overlay state
+let foPhase = 'wager';        // 'wager' | 'answer'
+let foIntroPhase = 'title';   // 'title' | 'category' | 'active'
+let foWagered = new Set();
+let foAnswered = new Set();
+let foCategory = '';
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 socket.emit('host_join_room', { code: SESSION_CODE });
 
@@ -49,6 +56,11 @@ socket.on('tile_used', ({ question_id }) => {
   renderScores();
 });
 
+socket.on('tile_restored', ({ question_id }) => {
+  const cell = document.getElementById(question_id);
+  if (cell) setCellOpen(cell);
+});
+
 socket.on('buzz_update', ({ queue }) => {
   currentBuzzQueue = queue;
   renderOverlayBuzzQueue();
@@ -74,24 +86,38 @@ socket.on('round_changed', () => {
 });
 
 socket.on('wager_submitted', ({ name }) => {
+  foWagered.add(name);
+  const badge = document.getElementById(`fo-w-${cssId(name)}`);
+  if (badge) { badge.textContent = '✓ wagered'; badge.className = 'status-badge in'; }
   updateFinalPlayerStatus(name, 'wager', true);
 });
 
 socket.on('all_wagers_in', () => {
-  document.getElementById('reveal-final-q-btn').disabled = false;
-  addFinalNote('✓ All wagers in — reveal the question');
+  document.getElementById('fo-proceed-btn').disabled = false;
+  document.getElementById('fo-phase-label').textContent = 'All wagers in — proceed when ready';
+  addFinalNote('✓ All wagers in');
 });
 
 socket.on('final_answer_submitted', ({ name }) => {
+  foAnswered.add(name);
+  const badge = document.getElementById(`fo-a-${cssId(name)}`);
+  if (badge) { badge.textContent = '✓ answered'; badge.className = 'status-badge in'; }
   updateFinalPlayerStatus(name, 'answer', true);
 });
 
 socket.on('all_answers_in', () => {
-  addFinalNote('✓ All answers in — reveal them one by one');
+  document.getElementById('fo-phase-label').textContent = 'All answers in — reveal one by one';
+  addFinalNote('✓ All answers in');
 });
 
 socket.on('final_answer_revealed', ({ name, answer, wager }) => {
   updateFinalAnswerReveal(name, answer, wager);
+  const ansDiv = document.getElementById(`fo-ans-text-${cssId(name)}`);
+  if (ansDiv) { ansDiv.textContent = `"${answer}" — wagered €${wager}`; ansDiv.classList.remove('hidden'); }
+});
+
+socket.on('final_jeopardy_started', ({ category }) => {
+  openFinalOverlay(category);
 });
 
 socket.on('game_ended', ({ final_scores }) => {
@@ -142,6 +168,12 @@ function setCellUsed(cell) {
   cell.className = 'cell question-cell used';
   const pd = cell.querySelector('.points-display');
   if (pd) pd.classList.add('hidden');
+}
+
+function setCellOpen(cell) {
+  cell.className = 'cell question-cell';
+  const pd = cell.querySelector('.points-display');
+  if (pd) pd.classList.remove('hidden');
 }
 
 // ── Round transition ──────────────────────────────────────────────────────────
@@ -221,7 +253,15 @@ function overlayScoreWrong() {
 // ── Board clicks ─────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.question-cell').forEach(cell => {
-    cell.addEventListener('click', () => {
+    cell.addEventListener('click', (e) => {
+      if (e.shiftKey) {
+        if (cell.classList.contains('used')) {
+          socket.emit('host_unmark_tile', { code: SESSION_CODE, question_id: cell.dataset.id });
+        } else {
+          socket.emit('host_mark_used', { code: SESSION_CODE, question_id: cell.dataset.id });
+        }
+        return;
+      }
       if (cell.classList.contains('used')) return;
       socket.emit('host_reveal_tile', { code: SESSION_CODE, question_id: cell.dataset.id });
     });
@@ -266,15 +306,94 @@ function startFinal() {
   const category = document.getElementById('final-category-input').value.trim() || 'Final Jeopardy';
   socket.emit('host_start_final', { code: SESSION_CODE, category });
   renderFinalPlayersList();
-  document.getElementById('reveal-final-q-btn').disabled = true;
-  addFinalNote(`Final Jeopardy started: "${category}"`);
 }
 
-function revealFinalQuestion() {
+// ── Final Jeopardy Overlay ────────────────────────────────────────────────────
+function openFinalOverlay(category) {
+  foCategory = category;
+  foPhase = 'wager';
+  foIntroPhase = 'title';
+  foWagered = new Set();
+  foAnswered = new Set();
+
+  // Reset screens
+  document.getElementById('fo-title-screen').classList.remove('hidden');
+  document.getElementById('fo-category-screen').classList.add('hidden');
+  document.getElementById('fo-main-screen').classList.add('hidden');
+
+  // Populate category text in both screens
+  document.getElementById('fo-category').textContent = category;
+  document.getElementById('fo-category-label').textContent = category;
+
+  // Reset main-screen state
+  document.getElementById('fo-question-wrap').classList.add('hidden');
+  document.getElementById('fo-phase-label').textContent = 'Waiting for wagers…';
+  document.getElementById('fo-proceed-btn').disabled = true;
+
+  const overlay = document.getElementById('final-overlay');
+  overlay.classList.remove('hidden');
+  overlay.offsetHeight;
+  overlay.classList.add('active');
+}
+
+function foAdvanceIntro() {
+  if (foIntroPhase === 'title') {
+    document.getElementById('fo-title-screen').classList.add('hidden');
+    document.getElementById('fo-category-screen').classList.remove('hidden');
+    foIntroPhase = 'category';
+  } else if (foIntroPhase === 'category') {
+    document.getElementById('fo-category-screen').classList.add('hidden');
+    document.getElementById('fo-main-screen').classList.remove('hidden');
+    foIntroPhase = 'active';
+    renderFoPlayers();
+  }
+}
+
+function foProceedToQuestion() {
   const question = document.getElementById('final-question-input').value.trim();
   if (!question) return;
   socket.emit('host_reveal_final_question', { code: SESSION_CODE, question });
-  document.getElementById('reveal-final-q-btn').disabled = true;
+  foPhase = 'answer';
+  foAnswered = new Set();
+  document.getElementById('fo-question').textContent = question;
+  document.getElementById('fo-question-wrap').classList.remove('hidden');
+  document.getElementById('fo-phase-label').textContent = 'Waiting for answers…';
+  document.getElementById('fo-proceed-btn').classList.add('hidden');
+  renderFoPlayers();
+}
+
+function renderFoPlayers() {
+  const el = document.getElementById('fo-players');
+  const eligible = scores.filter(s => s.score >= 0);
+  if (!eligible.length) { el.innerHTML = ''; return; }
+
+  if (foPhase === 'wager') {
+    el.innerHTML = eligible.map(({ name }) => `
+      <div class="fo-player-row">
+        <span class="fo-player-name">${escHtml(name)}</span>
+        <span class="status-badge ${foWagered.has(name) ? 'in' : 'waiting'}" id="fo-w-${cssId(name)}">
+          ${foWagered.has(name) ? '✓ wagered' : '⋯ waiting'}
+        </span>
+      </div>
+    `).join('');
+  } else {
+    el.innerHTML = eligible.map(({ name }) => `
+      <div class="fo-player-row" id="fo-row-${cssId(name)}">
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.25rem">
+          <span class="fo-player-name">${escHtml(name)}</span>
+          <span class="status-badge ${foAnswered.has(name) ? 'in' : 'waiting'}" id="fo-a-${cssId(name)}">
+            ${foAnswered.has(name) ? '✓ answered' : '⋯ waiting'}
+          </span>
+        </div>
+        <div id="fo-ans-text-${cssId(name)}" class="fo-answer-reveal hidden"></div>
+        <div class="fo-player-btns">
+          <button class="btn btn-secondary btn-small" onclick="revealFinalAnswer('${escHtml(name)}')">Reveal</button>
+          <button class="btn btn-success btn-small" onclick="finalCorrect('${escHtml(name)}')">✓ Correct</button>
+          <button class="btn btn-danger btn-small" onclick="finalWrong('${escHtml(name)}')">✗ Wrong</button>
+        </div>
+      </div>
+    `).join('');
+  }
 }
 
 function renderFinalPlayersList() {
@@ -282,17 +401,12 @@ function renderFinalPlayersList() {
   if (!scores.length) { container.innerHTML = ''; return; }
   container.innerHTML = scores
     .filter(s => s.score >= 0)
-    .map(({ name, score }) => `
+    .map(({ name }) => `
       <div class="final-player-row" id="fpr-${cssId(name)}">
         <span class="final-player-name">${escHtml(name)}</span>
         <span class="status-badge waiting" id="fpr-wager-${cssId(name)}">wager?</span>
         <span class="status-badge waiting" id="fpr-answer-${cssId(name)}">answer?</span>
         <div class="final-player-answer hidden" id="fpr-ans-text-${cssId(name)}"></div>
-        <div style="display:flex;gap:4px;margin-top:3px;width:100%">
-          <button class="btn btn-secondary btn-small" onclick="revealFinalAnswer('${escHtml(name)}')">Reveal</button>
-          <button class="btn btn-success btn-small" onclick="finalCorrect('${escHtml(name)}')">✓ Correct</button>
-          <button class="btn btn-danger btn-small" onclick="finalWrong('${escHtml(name)}')">✗ Wrong</button>
-        </div>
       </div>
     `).join('');
 }

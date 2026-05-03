@@ -28,16 +28,14 @@ def test_index_returns_200(client):
     assert b"Jeopardy" in res.data
 
 
-def test_admin_board1_loads(client):
+def test_admin_board1_redirects(client):
     res = client.get("/admin/board1")
-    assert res.status_code == 200
-    assert b"Board 1" in res.data
+    assert res.status_code == 302
 
 
-def test_admin_board2_loads(client):
+def test_admin_board2_redirects(client):
     res = client.get("/admin/board2")
-    assert res.status_code == 200
-    assert b"Board 2" in res.data
+    assert res.status_code == 302
 
 
 def test_admin_invalid_board_returns_404(client):

@@ -3,25 +3,11 @@
 {% block content %}
 <div class="home-container">
   <h1 class="home-title">JEOPARDY!</h1>
-  <p class="home-subtitle">Host a game or test a board</p>
 
   <div class="landing-actions">
     <a href="{{ url_for('host_setup') }}" class="btn btn-gold btn-large">Host Game</a>
     <a href="{{ url_for('join') }}" class="btn btn-primary btn-large">Join Game</a>
-  </div>
-
-  <div class="landing-divider">or test a board</div>
-
-  <div class="board-cards">
-    {% for board_id in ['board1', 'board2'] %}
-    <div class="board-card">
-      <h2>{{ board_id | replace('board', 'Board ') }}</h2>
-      <div class="card-actions">
-        <a href="{{ url_for('admin', board_id=board_id) }}" class="btn btn-secondary">Edit</a>
-        <a href="{{ url_for('game', board_id=board_id) }}" class="btn btn-primary">Test</a>
-      </div>
-    </div>
-    {% endfor %}
+    <a href="{{ url_for('edit_boards') }}" class="btn btn-secondary btn-large">Edit Boards</a>
   </div>
 </div>
 {% endblock %}

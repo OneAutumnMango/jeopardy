@@ -69,9 +69,7 @@
     <!-- Final Jeopardy (shown after round 2 is cleared) -->
     <div id="final-section" class="hidden">
       <div class="final-host-layout">
-
         <div class="final-setup-col">
-          <h2 style="font-family:'Oswald',sans-serif;color:var(--gold);font-size:2rem;margin-bottom:1rem">Final Jeopardy</h2>
           <div style="margin-bottom:0.75rem">
             <label style="font-size:0.8rem;color:var(--muted);display:block;margin-bottom:0.3rem">Category</label>
             <input id="final-category-input" class="final-input" type="text" placeholder="e.g. Famous Scientists">
@@ -83,17 +81,12 @@
           <button class="btn btn-gold" style="width:100%;margin-bottom:0.5rem" onclick="startFinal()">
             Start Final Jeopardy
           </button>
-          <button class="btn btn-secondary" style="width:100%" id="reveal-final-q-btn" onclick="revealFinalQuestion()" disabled>
-            Reveal Question to Players
-          </button>
           <div id="final-status-notes" style="margin-top:0.75rem"></div>
         </div>
-
         <div class="final-players-col">
           <h3 style="font-family:'Oswald',sans-serif;color:var(--gold);font-size:1.3rem;margin-bottom:0.75rem">Players</h3>
           <div id="final-players-list"></div>
         </div>
-
       </div>
     </div>
 
@@ -120,6 +113,52 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ── Final Jeopardy Overlay ── -->
+  <div id="final-overlay" class="tile-overlay hidden" style="z-index:700">
+
+    <!-- Screen 1: Title -->
+    <div id="fo-title-screen" class="fo-splash" onclick="foAdvanceIntro()">
+      <div class="fo-splash-text" style="color:var(--gold)">FINAL JEOPARDY!</div>
+      <div class="fo-splash-hint">Click to continue</div>
+    </div>
+
+    <!-- Screen 2: Category -->
+    <div id="fo-category-screen" class="fo-splash hidden" onclick="foAdvanceIntro()">
+      <div id="fo-category" class="fo-splash-text"></div>
+      <div class="fo-splash-hint">Click to continue</div>
+    </div>
+
+    <!-- Screen 3: Wager / Answer tracking -->
+    <div id="fo-main-screen" class="hidden">
+      <div class="tile-overlay-content" style="max-width:680px;width:92%;max-height:90vh;overflow-y:auto">
+
+        <div style="text-align:center;margin-bottom:1.25rem">
+          <div class="overlay-points" style="font-size:1.6rem;letter-spacing:0.05em">FINAL JEOPARDY!</div>
+          <div style="font-family:'Oswald',sans-serif;color:var(--text);font-size:1.1rem;background:rgba(255,255,255,0.08);border-radius:8px;padding:0.35rem 1rem;display:inline-block;margin-top:0.4rem" id="fo-category-label"></div>
+        </div>
+
+        <!-- Question (hidden during wager phase) -->
+        <div id="fo-question-wrap" class="hidden" style="margin-bottom:1.25rem">
+          <div id="fo-question" class="overlay-text question-text" style="font-size:1.25rem"></div>
+        </div>
+
+        <!-- Phase label -->
+        <div id="fo-phase-label" style="font-family:'Oswald',sans-serif;color:var(--muted);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.6rem"></div>
+
+        <!-- Player status list -->
+        <div id="fo-players" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1.25rem"></div>
+
+        <!-- Actions -->
+        <div class="overlay-actions" style="margin-top:0.75rem">
+          <button id="fo-proceed-btn" class="btn btn-gold" onclick="foProceedToQuestion()" disabled>
+            Proceed to Question →
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ── Round Transition Modal ── -->
