@@ -19,9 +19,17 @@ A self-hosted, real-time multiplayer Jeopardy web app built with Flask and Socke
 
 ## Running with Docker
 
-The image is published to GitHub Container Registry on every push to `main`.
+The image is published to GitHub Container Registry on every push to `main`. You only need two files — no local clone required:
 
 ```bash
+# Download the compose file and example env
+curl -O https://raw.githubusercontent.com/oneautumnmango/jeopardy/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/oneautumnmango/jeopardy/main/.env.example
+
+# Copy and edit the env file
+cp .env.example .env
+# edit .env and set SECRET_KEY
+
 docker compose up -d
 docker compose down   # to stop
 ```
@@ -34,26 +42,7 @@ To get the latest image after an update:
 docker compose pull && docker compose up -d
 ```
 
-**LAN play (phones + laptops on the same network):** find your machine's IP and share `http://<your-lan-ip>:5000` with players.
-
-```bash
-# Linux
-ip addr show | grep "inet " | grep -v 127.0.0.1
-
-# macOS
-ipconfig getifaddr en0
-
-# Windows
-ipconfig
-```
-
-**Secret key** — create a `.env` file next to `docker-compose.yml`:
-
-```
-SECRET_KEY=your-random-string-here
-```
-
-Generate a good one with:
+**Secret key** — copy `.env.example` to `.env` and set `SECRET_KEY` to a random string:
 
 ```bash
 python -c "import secrets; print(secrets.token_hex(32))"
@@ -76,6 +65,12 @@ python app.py
 ```
 
 Open [http://localhost:5000](http://localhost:5000). The built-in Flask dev server is fine for local testing but not suitable for LAN play with multiple devices.
+
+For a production-like local run using the gevent worker (required for WebSocket support with multiple users):
+
+```bash
+gunicorn app:app --worker-class=geventwebsocket.gunicorn.workers.GeventWebSocketWorker --workers=1 -b 0.0.0.0:5000
+```
 
 ---
 
