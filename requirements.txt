@@ -1,4 +1,6 @@
 flask>=3.0
 flask-socketio>=5.3
 gunicorn>=21.0
+gevent
+gevent-websocket
 pytest>=8.0

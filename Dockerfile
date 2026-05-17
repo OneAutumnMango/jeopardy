@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["gunicorn", "app:app", "--worker-class=gthread", "--threads=4", "-b", "0.0.0.0:5000"]
+CMD ["gunicorn", "app:app", "--worker-class=geventwebsocket.gunicorn.workers.GeventWebSocketWorker", "--workers=1", "-b", "0.0.0.0:5000"]

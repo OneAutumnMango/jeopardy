@@ -4,12 +4,15 @@ import random
 import string
 import time
 
+from gevent import monkey
+monkey.patch_all()
+
 from flask import Flask, render_template, request, jsonify, abort, redirect, url_for
 from flask_socketio import SocketIO, emit, join_room
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-in-prod')
-socketio = SocketIO(app, async_mode='threading', cors_allowed_origins='*')
+socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins='*')
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "boards.json")
 
