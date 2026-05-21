@@ -1,3 +1,5 @@
+> This is 100% vibe coded so don't expect it to be perfect, well coded, or lacking security vulnerabilities. Theres a reason I haven't opened up my domain for others.
+
 # Jeopardy
 
 A self-hosted, real-time multiplayer Jeopardy web app built with Flask and Socket.IO.
