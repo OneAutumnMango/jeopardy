@@ -269,6 +269,7 @@ function showQImgPreview(textarea) {
     textarea.value = '';
     preview.remove();
     textarea.style.display = '';
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
   });
   textarea.style.display = 'none';
 }
@@ -302,6 +303,7 @@ function initImageDrop() {
       reader.onload = (ev) => {
         textarea.value = `[img]${ev.target.result}`;
         showQImgPreview(textarea);
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
       };
       reader.readAsDataURL(file);
     });
@@ -341,6 +343,30 @@ document.addEventListener('DOMContentLoaded', () => {
   loadBoard('board2');
   loadFinal();
   initImageDrop();
+
+  // ── Auto-save on every change ───────────────────────────────────────────────
+  let autoSaveTimer = null;
+  function scheduleAutoSave(boardId) {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      if (boardId === 'final') {
+        localStorage.setItem(LS_KEYS.final, JSON.stringify(serializeFinal()));
+      } else {
+        localStorage.setItem(LS_KEYS[boardId], JSON.stringify(serializeBoard(boardId)));
+      }
+    }, 300);
+  }
+
+  ['board1', 'board2'].forEach(boardId => {
+    document.getElementById(`admin-grid-${boardId}`)
+      .addEventListener('input', () => scheduleAutoSave(boardId));
+  });
+
+  ['final-category', 'final-question', 'final-answer'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => scheduleAutoSave('final'));
+  });
+  // ───────────────────────────────────────────────────────────────────────────
+
   document.getElementById('import-input').addEventListener('change', handleImport);
   ['board1', 'board2', 'final'].forEach(target => {
     const el = document.getElementById(`import-${target}`);
