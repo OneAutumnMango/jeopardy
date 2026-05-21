@@ -1,13 +1,30 @@
-.venv/
-venv/
-env/
+# Python
 __pycache__/
 *.pyc
 *.pyo
+.venv/
+
+# Testing & coverage
+tests/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Runtime data (mounted as volumes)
 data/boards.json
+uploads/
+
+# Logs
 *.log
+
+# Version control
 .git/
 .gitignore
+.github/
+
+# Project meta / docs
+README.md
+Dockerfile
+docker-compose.yml
+.env
+.env.example

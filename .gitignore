@@ -1,16 +1,23 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.env
-venv/
-.venv/
-env/
 *.egg-info/
 dist/
 build/
+.venv/
+
+# Testing
 .pytest_cache/
 .coverage
 htmlcov/
-*.log
+
+# Runtime data
 uploads/
+
+# Logs
+*.log
+
+# misc
+.env

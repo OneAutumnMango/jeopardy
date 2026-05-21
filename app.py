@@ -35,21 +35,20 @@ def default_boards():
     boards = {}
     for board_num, multiplier in [("board1", 100), ("board2", 200)]:
         label = "Board 1" if board_num == "board1" else "Board 2"
-        category_names = ["History", "Science", "Pop Culture", "Geography", "Sports"]
         categories = []
-        for cat_idx, cat_name in enumerate(category_names):
+        for cat_idx in range(5):
             questions = []
             for q_idx in range(5):
                 points = multiplier * (q_idx + 1)
                 questions.append({
                     "id": f"q-{cat_idx}-{q_idx}",
                     "points": points,
-                    "question": f"[{cat_name} for {points}] Enter your question here.",
-                    "answer": "Edit this answer in the admin panel."
+                    "question": "",
+                    "answer": ""
                 })
             categories.append({
                 "id": f"cat-{cat_idx}",
-                "title": cat_name,
+                "title": f"Category {cat_idx + 1}",
                 "questions": questions
             })
         boards[board_num] = {
