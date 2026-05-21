@@ -6,7 +6,6 @@ __pycache__/
 venv/
 .venv/
 env/
-data/boards.json
 *.egg-info/
 dist/
 build/

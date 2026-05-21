@@ -1225,3 +1225,58 @@ body {
   font-size: 0.9rem;
   letter-spacing: 0.05em;
 }
+
+/* ── Image drop on question inputs ── */
+.q-input.drag-over {
+  border-color: var(--gold);
+  background: rgba(245, 197, 24, 0.08);
+  outline: 2px dashed var(--gold);
+}
+
+.q-img-preview {
+  position: relative;
+  display: inline-block;
+  margin-top: 0.4rem;
+  border: 2px solid var(--gold);
+  border-radius: 6px;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.q-img-thumb {
+  display: block;
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  background: #000;
+}
+
+.q-img-clear {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 22px;
+  text-align: center;
+  padding: 0;
+}
+.q-img-clear:hover {
+  background: rgba(200, 0, 0, 0.85);
+}
+
+/* ── Image in overlay / player view ── */
+.overlay-question-img {
+  max-width: 100%;
+  max-height: 55vh;
+  border-radius: 6px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}

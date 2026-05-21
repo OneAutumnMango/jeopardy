@@ -179,19 +179,6 @@ def edit_boards():
     return render_template("edit.html", boards=boards)
 
 
-@app.route("/edit/save", methods=["POST"])
-def edit_boards_save():
-    boards = load_boards()
-    payload = request.get_json(force=True)
-    if not payload:
-        return jsonify({"status": "error", "message": "No JSON payload"}), 400
-    for bid in ("board1", "board2"):
-        if bid in payload:
-            boards[bid] = payload[bid]
-    save_boards(boards)
-    return jsonify({"status": "ok"})
-
-
 @app.route("/game/<board_id>")
 def game(board_id):
     boards = load_boards()

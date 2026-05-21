@@ -13,6 +13,11 @@ function switchTab(btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
   btn.classList.add('active');
   document.getElementById(btn.dataset.tab).classList.remove('hidden');
+  const tab = btn.dataset.tab;
+  const tb1 = document.getElementById('test-board1-btn');
+  const tb2 = document.getElementById('test-board2-btn');
+  if (tb1) tb1.classList.toggle('hidden', tab !== 'tab-board1');
+  if (tb2) tb2.classList.toggle('hidden', tab !== 'tab-board2');
 }
 
 // ── Serialize ─────────────────────────────────────────────────────────────────
@@ -83,7 +88,7 @@ function loadFinal() {
 
 // ── Save All ──────────────────────────────────────────────────────────────────
 
-async function saveAll() {
+function saveAll() {
   const btn = document.getElementById('save-btn');
   btn.disabled = true;
   btn.textContent = 'Saving…';
@@ -96,17 +101,7 @@ async function saveAll() {
   localStorage.setItem(LS_KEYS.board2, JSON.stringify(b2));
   localStorage.setItem(LS_KEYS.final, JSON.stringify(fin));
 
-  try {
-    await fetch('/edit/save', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ board1: b1, board2: b2 })
-    });
-    showToast('All boards saved!');
-  } catch {
-    showToast('Saved to browser (server unreachable)', false);
-  }
-
+  showToast('All boards saved!');
   btn.disabled = false;
   btn.textContent = 'Save All';
 }
@@ -254,6 +249,65 @@ function showToast(message, isError = false) {
   setTimeout(() => { toast.className = 'toast hidden'; }, 3000);
 }
 
+// ── Image drag-and-drop for question inputs ───────────────────────────────────
+
+const IMG_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+
+function showQImgPreview(textarea) {
+  let preview = textarea.parentElement.querySelector('.q-img-preview');
+  if (!preview) {
+    preview = document.createElement('div');
+    preview.className = 'q-img-preview';
+    textarea.parentElement.insertBefore(preview, textarea.nextSibling);
+  }
+  const src = textarea.value.slice(5); // strip [img]
+  preview.innerHTML = `
+    <img src="${src}" class="q-img-thumb" alt="Question image">
+    <button type="button" class="q-img-clear" title="Remove image">✕</button>
+  `;
+  preview.querySelector('.q-img-clear').addEventListener('click', () => {
+    textarea.value = '';
+    preview.remove();
+    textarea.style.display = '';
+  });
+  textarea.style.display = 'none';
+}
+
+function initImageDrop() {
+  document.querySelectorAll('.q-input').forEach(textarea => {
+    // Show preview for any already-loaded image values (e.g. from localStorage)
+    if (textarea.value.startsWith('[img]')) showQImgPreview(textarea);
+
+    textarea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      textarea.classList.add('drag-over');
+    });
+    textarea.addEventListener('dragleave', () => {
+      textarea.classList.remove('drag-over');
+    });
+    textarea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      textarea.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        showToast('Only image files can be dropped here', true);
+        return;
+      }
+      if (file.size > IMG_MAX_BYTES) {
+        showToast(`Image too large — max 10 MB (this file is ${(file.size / 1024 / 1024).toFixed(1)} MB)`, true);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        textarea.value = `[img]${ev.target.result}`;
+        showQImgPreview(textarea);
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 function handleImportTargeted(event, target) {
@@ -286,6 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadBoard('board1');
   loadBoard('board2');
   loadFinal();
+  initImageDrop();
   document.getElementById('import-input').addEventListener('change', handleImport);
   ['board1', 'board2', 'final'].forEach(target => {
     const el = document.getElementById(`import-${target}`);

@@ -9,6 +9,20 @@ let canBuzz = false;
 let hasSubmittedWager = false;
 let hasSubmittedAnswer = false;
 
+// ── Question content renderer ─────────────────────────────────────────────────
+
+function renderQuestionContent(text, el) {
+  if (text && text.startsWith('[img]')) {
+    el.textContent = '';
+    const img = document.createElement('img');
+    img.src = text.slice(5);
+    img.className = 'overlay-question-img';
+    el.appendChild(img);
+  } else {
+    el.textContent = text || '';
+  }
+}
+
 // ── Connect / (re)join ────────────────────────────────────────────────────────
 socket.on('connect', () => {
   if (myName) {
@@ -75,7 +89,7 @@ socket.on('tile_revealed', ({ question, points, is_daily_double, dd_player, dd_w
   document.getElementById('current-points').textContent = is_daily_double
     ? `DAILY DOUBLE — €${dd_wager}`
     : `€${points}`;
-  document.getElementById('current-question').textContent = question;
+  renderQuestionContent(question, document.getElementById('current-question'));
   document.getElementById('question-display').classList.remove('hidden');
   document.getElementById('answer-display').classList.add('hidden');
   canBuzz = !is_daily_double;
@@ -161,7 +175,7 @@ socket.on('final_jeopardy_started', ({ category }) => {
 });
 
 socket.on('final_question_revealed', ({ question }) => {
-  document.getElementById('final-question-text').textContent = question;
+  renderQuestionContent(question, document.getElementById('final-question-text'));
   document.getElementById('final-question-display').classList.remove('hidden');
   if (!hasSubmittedAnswer && myScore >= 0) {
     document.getElementById('answer-section').classList.remove('hidden');

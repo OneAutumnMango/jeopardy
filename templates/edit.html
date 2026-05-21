@@ -5,6 +5,9 @@
   <div class="admin-header">
     <h1>Edit Boards</h1>
     <div class="admin-actions">
+      <!-- Test buttons -->
+      <a id="test-board1-btn" href="{{ url_for('game', board_id='board1') }}" class="btn btn-gold">Test Board 1</a>
+      <a id="test-board2-btn" href="{{ url_for('game', board_id='board2') }}" class="btn btn-gold hidden">Test Board 2</a>
       <!-- Export split button -->
       <div class="dropdown-wrap split-btn-wrap">
         <div class="split-btn btn-secondary">
@@ -75,9 +78,6 @@
       {% endfor %}
       {% endfor %}
     </div>
-    <div style="margin-top:0.75rem">
-      <a href="{{ url_for('game', board_id='board1') }}" class="btn btn-primary btn-small">Test Board 1</a>
-    </div>
   </div>
 
   <!-- Board 2 tab -->
@@ -102,9 +102,6 @@
       </div>
       {% endfor %}
       {% endfor %}
-    </div>
-    <div style="margin-top:0.75rem">
-      <a href="{{ url_for('game', board_id='board2') }}" class="btn btn-primary btn-small">Test Board 2</a>
     </div>
   </div>
 

@@ -35,6 +35,20 @@ function resetBoard() {
   window.location.reload();
 }
 
+// ── Question content renderer ─────────────────────────────────────────────────
+
+function renderQuestionContent(text, el) {
+  if (text && text.startsWith('[img]')) {
+    el.textContent = '';
+    const img = document.createElement('img');
+    img.src = text.slice(5);
+    img.className = 'overlay-question-img';
+    el.appendChild(img);
+  } else {
+    el.textContent = text || '';
+  }
+}
+
 // ── Fullscreen overlay ─────────────────────────────────────────────────────────
 
 let overlayState = 'idle';
@@ -43,8 +57,9 @@ let overlayCell = null;
 function openOverlay(cell) {
   const overlay = document.getElementById('tile-overlay');
   document.getElementById('overlay-points').textContent = `€${cell.dataset.points}`;
-  document.getElementById('overlay-text').textContent = cell.dataset.question;
-  document.getElementById('overlay-text').className = 'overlay-text question-text';
+  const textEl = document.getElementById('overlay-text');
+  renderQuestionContent(cell.dataset.question, textEl);
+  textEl.className = 'overlay-text question-text';
   document.getElementById('overlay-hint').textContent = 'Click anywhere to reveal answer';
 
   overlay.classList.remove('hidden');

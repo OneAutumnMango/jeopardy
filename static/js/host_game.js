@@ -178,6 +178,20 @@ socket.on('final_setup', (setup) => {
   if (qInput && !qInput.value) qInput.value = setup.question || '';
 });
 
+// ── Question content renderer ─────────────────────────────────────────────────
+
+function renderQuestionContent(text, el) {
+  if (text && text.startsWith('[img]')) {
+    el.textContent = '';
+    const img = document.createElement('img');
+    img.src = text.slice(5);
+    img.className = 'overlay-question-img';
+    el.appendChild(img);
+  } else {
+    el.textContent = text || '';
+  }
+}
+
 // ── Overlay helpers ─────────────────────────────────────────────────────────
 function openHostOverlay(question, points, isDailyDouble, ddPlayer) {
   const overlay = document.getElementById('host-tile-overlay');
@@ -187,8 +201,9 @@ function openHostOverlay(question, points, isDailyDouble, ddPlayer) {
   } else {
     pointsEl.textContent = `€${points}`;
   }
-  document.getElementById('host-overlay-text').textContent = question;
-  document.getElementById('host-overlay-text').className = 'overlay-text question-text';
+  const textEl = document.getElementById('host-overlay-text');
+  renderQuestionContent(question, textEl);
+  textEl.className = 'overlay-text question-text';
   document.getElementById('host-reveal-answer-btn').disabled = false;
 
   // For DD, hide the buzz queue and pre-populate score controls

@@ -1,0 +1,379 @@
+{
+  "board1": {
+    "label": "Board 1",
+    "point_multiplier": 100,
+    "categories": [
+      {
+        "id": "cat-0",
+        "title": "Category 1",
+        "questions": [
+          {
+            "id": "q-0-0",
+            "points": 100,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-0-1",
+            "points": 200,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-0-2",
+            "points": 300,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-0-3",
+            "points": 400,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-0-4",
+            "points": 500,
+            "question": "",
+            "answer": ""
+          }
+        ]
+      },
+      {
+        "id": "cat-1",
+        "title": "Category 2",
+        "questions": [
+          {
+            "id": "q-1-0",
+            "points": 100,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-1-1",
+            "points": 200,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-1-2",
+            "points": 300,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-1-3",
+            "points": 400,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-1-4",
+            "points": 500,
+            "question": "",
+            "answer": ""
+          }
+        ]
+      },
+      {
+        "id": "cat-2",
+        "title": "Category 3",
+        "questions": [
+          {
+            "id": "q-2-0",
+            "points": 100,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-2-1",
+            "points": 200,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-2-2",
+            "points": 300,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-2-3",
+            "points": 400,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-2-4",
+            "points": 500,
+            "question": "",
+            "answer": ""
+          }
+        ]
+      },
+      {
+        "id": "cat-3",
+        "title": "Category 4",
+        "questions": [
+          {
+            "id": "q-3-0",
+            "points": 100,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-3-1",
+            "points": 200,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-3-2",
+            "points": 300,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-3-3",
+            "points": 400,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-3-4",
+            "points": 500,
+            "question": "",
+            "answer": ""
+          }
+        ]
+      },
+      {
+        "id": "cat-4",
+        "title": "Category 5",
+        "questions": [
+          {
+            "id": "q-4-0",
+            "points": 100,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-4-1",
+            "points": 200,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-4-2",
+            "points": 300,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-4-3",
+            "points": 400,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-4-4",
+            "points": 500,
+            "question": "",
+            "answer": ""
+          }
+        ]
+      }
+    ]
+  },
+  "board2": {
+    "label": "Board 2",
+    "point_multiplier": 200,
+    "categories": [
+      {
+        "id": "cat-0",
+        "title": "Category 1",
+        "questions": [
+          {
+            "id": "q-0-0",
+            "points": 200,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-0-1",
+            "points": 400,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-0-2",
+            "points": 600,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-0-3",
+            "points": 800,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-0-4",
+            "points": 1000,
+            "question": "",
+            "answer": ""
+          }
+        ]
+      },
+      {
+        "id": "cat-1",
+        "title": "Category 2",
+        "questions": [
+          {
+            "id": "q-1-0",
+            "points": 200,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-1-1",
+            "points": 400,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-1-2",
+            "points": 600,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-1-3",
+            "points": 800,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-1-4",
+            "points": 1000,
+            "question": "",
+            "answer": ""
+          }
+        ]
+      },
+      {
+        "id": "cat-2",
+        "title": "Category 3",
+        "questions": [
+          {
+            "id": "q-2-0",
+            "points": 200,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-2-1",
+            "points": 400,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-2-2",
+            "points": 600,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-2-3",
+            "points": 800,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-2-4",
+            "points": 1000,
+            "question": "",
+            "answer": ""
+          }
+        ]
+      },
+      {
+        "id": "cat-3",
+        "title": "Category 4",
+        "questions": [
+          {
+            "id": "q-3-0",
+            "points": 200,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-3-1",
+            "points": 400,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-3-2",
+            "points": 600,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-3-3",
+            "points": 800,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-3-4",
+            "points": 1000,
+            "question": "",
+            "answer": ""
+          }
+        ]
+      },
+      {
+        "id": "cat-4",
+        "title": "Category 5",
+        "questions": [
+          {
+            "id": "q-4-0",
+            "points": 200,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-4-1",
+            "points": 400,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-4-2",
+            "points": 600,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-4-3",
+            "points": 800,
+            "question": "",
+            "answer": ""
+          },
+          {
+            "id": "q-4-4",
+            "points": 1000,
+            "question": "",
+            "answer": ""
+          }
+        ]
+      }
+    ]
+  },
+  "final": {
+    "category": "",
+    "question": "",
+    "answer": ""
+  }
+}
