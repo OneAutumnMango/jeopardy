@@ -3,7 +3,7 @@ import os
 import random
 import string
 import time
-import uuid
+import hashlib
 
 from gevent import monkey
 monkey.patch_all()
@@ -202,8 +202,13 @@ def upload_image():
     ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
     if ext not in ALLOWED_IMAGE_EXTENSIONS:
         return jsonify({"error": f"File type .{ext} not allowed"}), 400
-    filename = f"{uuid.uuid4().hex}.{ext}"
-    f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    data = f.read()
+    content_hash = hashlib.sha256(data).hexdigest()[:32]
+    filename = f"{content_hash}.{ext}"
+    dest = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if not os.path.exists(dest):
+        with open(dest, 'wb') as out:
+            out.write(data)
     return jsonify({"url": f"/uploads/{filename}"})
 
 
