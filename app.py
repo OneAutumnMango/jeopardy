@@ -3,16 +3,24 @@ import os
 import random
 import string
 import time
+import uuid
 
 from gevent import monkey
 monkey.patch_all()
 
-from flask import Flask, render_template, request, jsonify, abort, redirect, url_for
+from flask import Flask, render_template, request, jsonify, abort, redirect, url_for, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-change-in-prod')
+app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20 MB hard limit
+ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'avif'}
 socketio = SocketIO(app, async_mode='gevent', cors_allowed_origins='*')
+
+# Ensure uploads dir exists on startup
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "boards.json")
 
@@ -177,6 +185,26 @@ def final_edit():
 def edit_boards():
     boards = load_boards()
     return render_template("edit.html", boards=boards)
+
+
+@app.route("/uploads/<path:filename>")
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+
+@app.route("/upload/image", methods=["POST"])
+def upload_image():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    f = request.files['file']
+    if not f.filename:
+        return jsonify({"error": "Empty filename"}), 400
+    ext = f.filename.rsplit('.', 1)[-1].lower() if '.' in f.filename else ''
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        return jsonify({"error": f"File type .{ext} not allowed"}), 400
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    return jsonify({"url": f"/uploads/{filename}"})
 
 
 @app.route("/game/<board_id>")

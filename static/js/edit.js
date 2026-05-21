@@ -93,13 +93,9 @@ function saveAll() {
   btn.disabled = true;
   btn.textContent = 'Saving…';
 
-  const b1 = serializeBoard('board1');
-  const b2 = serializeBoard('board2');
-  const fin = serializeFinal();
-
-  localStorage.setItem(LS_KEYS.board1, JSON.stringify(b1));
-  localStorage.setItem(LS_KEYS.board2, JSON.stringify(b2));
-  localStorage.setItem(LS_KEYS.final, JSON.stringify(fin));
+  localStorage.setItem(LS_KEYS.board1, JSON.stringify(serializeBoard('board1')));
+  localStorage.setItem(LS_KEYS.board2, JSON.stringify(serializeBoard('board2')));
+  localStorage.setItem(LS_KEYS.final,  JSON.stringify(serializeFinal()));
 
   showToast('All boards saved!');
   btn.disabled = false;
@@ -251,7 +247,7 @@ function showToast(message, isError = false) {
 
 // ── Image drag-and-drop for question inputs ───────────────────────────────────
 
-const IMG_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+const IMG_MAX_BYTES = 20 * 1024 * 1024; // 20 MB — matches server MAX_CONTENT_LENGTH
 
 function showQImgPreview(textarea) {
   let preview = textarea.parentElement.querySelector('.q-img-preview');
@@ -296,16 +292,21 @@ function initImageDrop() {
         return;
       }
       if (file.size > IMG_MAX_BYTES) {
-        showToast(`Image too large — max 10 MB (this file is ${(file.size / 1024 / 1024).toFixed(1)} MB)`, true);
+        showToast(`Image too large — max ${IMG_MAX_BYTES / 1024 / 1024} MB (this file is ${(file.size / 1024 / 1024).toFixed(1)} MB)`, true);
         return;
       }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        textarea.value = `[img]${ev.target.result}`;
-        showQImgPreview(textarea);
-        textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      };
-      reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append('file', file);
+      showToast('Uploading image…');
+      fetch('/upload/image', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) { showToast(data.error, true); return; }
+          textarea.value = `[img]${data.url}`;
+          showQImgPreview(textarea);
+          textarea.dispatchEvent(new Event('input', { bubbles: true }));
+        })
+        .catch(() => showToast('Upload failed', true));
     });
   });
 }
@@ -320,11 +321,9 @@ function handleImportTargeted(event, target) {
     try {
       const data = JSON.parse(e.target.result);
       if (target === 'final') {
-        // Accept {category,question,answer} directly or {final:{...}}
         const fin = data.final || data;
         localStorage.setItem(LS_KEYS.final, JSON.stringify(fin));
       } else {
-        // Accept board data directly or combined {board1/board2: {...}}
         const board = data[target] || data;
         normalizeBoard(board, target);
         localStorage.setItem(LS_KEYS[target], JSON.stringify(board));

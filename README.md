@@ -48,7 +48,7 @@ docker compose pull && docker compose up -d
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-> **Note**: Board data is persisted via the `./data` volume mount. Sessions (active games) are in-memory and are lost if the container restarts.
+> **Note**: Board data is persisted via the `./data` volume mount. Uploaded images are persisted via the `./uploads` volume mount. Sessions (active games) are in-memory and are lost if the container restarts.
 
 ---
 
@@ -139,7 +139,8 @@ jeopardy/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── data/
-│   └── boards.json           # Default board data (auto-generated; gitignored)
+│   └── boards.json           # Default board data
+├── uploads/                  # Uploaded question images (auto-created; gitignored)
 ├── static/
 │   ├── css/style.css         # Dark game-show theme
 │   └── js/

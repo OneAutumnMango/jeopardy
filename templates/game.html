@@ -37,6 +37,32 @@
 
 <script>
   const BOARD_ID = "{{ board_id }}";
+
+  // Always start fresh — no used-tile state carried over between visits
+  localStorage.removeItem(`jeopardy-used-${BOARD_ID}`);
+
+  // Patch cell data from localStorage so edits show without a server save
+  (function () {
+    const raw = localStorage.getItem(`jeopardy-board-${BOARD_ID}`);
+    if (!raw) return;
+    try {
+      const board = JSON.parse(raw);
+      // Patch category headers
+      const headers = document.querySelectorAll('.category-header');
+      board.categories.forEach((cat, i) => {
+        if (headers[i]) headers[i].textContent = cat.title;
+      });
+      // Patch question cells
+      board.categories.forEach((cat, catIdx) => {
+        cat.questions.forEach((q, qIdx) => {
+          const cell = document.getElementById(`q-${catIdx}-${qIdx}`);
+          if (!cell) return;
+          cell.dataset.question = q.question || '';
+          cell.dataset.answer   = q.answer   || '';
+        });
+      });
+    } catch {}
+  })();
 </script>
 <script src="{{ url_for('static', filename='js/game.js') }}"></script>
 {% endblock %}
