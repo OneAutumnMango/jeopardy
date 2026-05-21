@@ -189,7 +189,7 @@ def edit_boards():
 
 @app.route("/uploads/<path:filename>")
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename, max_age=31536000)
 
 
 @app.route("/upload/image", methods=["POST"])
