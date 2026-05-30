@@ -436,7 +436,7 @@ function toggleScorePanel() {
 }
 
 function renderScores() {
-  const pts = activeTile ? activeTile.points : 0;
+  const pts = activeTile ? activeTile.points : 100;
   const tbody = document.getElementById('score-table-body');
   if (!scores.length) {
     tbody.innerHTML = '<tr><td colspan="3" style="color:var(--muted);font-size:0.8rem">No players yet</td></tr>';
@@ -518,7 +518,6 @@ function foAdvanceIntro() {
 
 function foProceedToQuestion() {
   const question = document.getElementById('final-question-input').value.trim();
-  if (!question) return;
   socket.emit('host_reveal_final_question', { code: SESSION_CODE, question });
   foPhase = 'answer';
   foAnswered = new Set();
