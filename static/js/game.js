@@ -40,10 +40,20 @@ function resetBoard() {
 function renderQuestionContent(text, el) {
   if (text && text.startsWith('[img]')) {
     el.textContent = '';
+    const raw = text.slice(5); // strip [img]
+    const capIdx = raw.indexOf('[cap]');
+    const src = capIdx === -1 ? raw : raw.slice(0, capIdx);
+    const caption = capIdx === -1 ? '' : raw.slice(capIdx + 5).trim();
     const img = document.createElement('img');
-    img.src = text.slice(5);
+    img.src = src;
     img.className = 'overlay-question-img';
     el.appendChild(img);
+    if (caption) {
+      const cap = document.createElement('div');
+      cap.className = 'overlay-img-caption';
+      cap.textContent = caption;
+      el.appendChild(cap);
+    }
   } else {
     el.textContent = text || '';
   }

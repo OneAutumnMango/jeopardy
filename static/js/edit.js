@@ -271,11 +271,22 @@ function showQImgPreview(textarea) {
     preview.className = 'q-img-preview';
     textarea.parentElement.insertBefore(preview, textarea.nextSibling);
   }
-  const src = textarea.value.slice(5); // strip [img]
+  const raw = textarea.value.slice(5); // strip [img]
+  const capIdx = raw.indexOf('[cap]');
+  const src = capIdx === -1 ? raw : raw.slice(0, capIdx);
+  const caption = capIdx === -1 ? '' : raw.slice(capIdx + 5);
   preview.innerHTML = `
     <img src="${src}" class="q-img-thumb" alt="Question image">
     <button type="button" class="q-img-clear" title="Remove image">✕</button>
+    <input type="text" class="q-img-caption-input" placeholder="Optional caption / question text…" value="${caption.replace(/"/g, '&quot;')}">
   `;
+  // Keep textarea value in sync when caption changes
+  preview.querySelector('.q-img-caption-input').addEventListener('input', (e) => {
+    const cap = e.target.value;
+    const base = `[img]${src}`;
+    textarea.value = cap ? `${base}[cap]${cap}` : base;
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  });
   preview.querySelector('.q-img-thumb').addEventListener('click', () => openImgLightbox(src));
   preview.querySelector('.q-img-clear').addEventListener('click', () => {
     textarea.value = '';

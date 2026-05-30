@@ -1273,6 +1273,33 @@ body {
   background: rgba(200, 0, 0, 0.85);
 }
 
+.q-img-caption-input {
+  display: block;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.5rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.q-img-caption-input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+/* Caption rendered below image in overlay */
+.overlay-img-caption {
+  margin-top: 0.75rem;
+  font-size: 1.1rem;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.4;
+}
+
 /* ── Image lightbox overlay (edit board) ── */
 #img-lightbox {
   display: none;
