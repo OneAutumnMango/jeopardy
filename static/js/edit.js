@@ -250,7 +250,10 @@ function showToast(message, isError = false) {
 const IMG_MAX_BYTES = 20 * 1024 * 1024; // 20 MB — matches server MAX_CONTENT_LENGTH
 
 function showQImgPreview(textarea) {
-  let preview = textarea.parentElement.querySelector('.q-img-preview');
+  // Check if the preview already exists immediately after this textarea
+  let preview = (textarea.nextElementSibling && textarea.nextElementSibling.classList.contains('q-img-preview'))
+    ? textarea.nextElementSibling
+    : null;
   if (!preview) {
     preview = document.createElement('div');
     preview.className = 'q-img-preview';
@@ -271,7 +274,13 @@ function showQImgPreview(textarea) {
 }
 
 function initImageDrop() {
-  document.querySelectorAll('.q-input').forEach(textarea => {
+  const allDropTargets = [
+    ...document.querySelectorAll('.q-input'),
+    ...document.querySelectorAll('.a-input'),
+    ...['final-question', 'final-answer'].map(id => document.getElementById(id)).filter(Boolean)
+  ];
+
+  allDropTargets.forEach(textarea => {
     // Show preview for any already-loaded image values (e.g. from localStorage)
     if (textarea.value.startsWith('[img]')) showQImgPreview(textarea);
 

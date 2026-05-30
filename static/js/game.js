@@ -73,7 +73,7 @@ function openOverlay(cell) {
 
 function handleOverlayClick() {
   if (overlayState === 'showing-question') {
-    document.getElementById('overlay-text').textContent = overlayCell.dataset.answer;
+    renderQuestionContent(overlayCell.dataset.answer, document.getElementById('overlay-text'));
     document.getElementById('overlay-text').className = 'overlay-text answer-text';
     document.getElementById('overlay-hint').textContent = 'Click anywhere to close';
     overlayState = 'showing-answer';

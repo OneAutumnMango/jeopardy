@@ -80,7 +80,7 @@ socket.on('tile_revealed', ({ question_id, question, points, is_daily_double, dd
 });
 
 socket.on('answer_revealed', ({ answer }) => {
-  document.getElementById('host-overlay-text').textContent = answer;
+  renderQuestionContent(answer, document.getElementById('host-overlay-text'));
   document.getElementById('host-overlay-text').className = 'overlay-text answer-text';
   document.getElementById('host-reveal-answer-btn').disabled = true;
 });

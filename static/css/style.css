@@ -1226,8 +1226,10 @@ body {
   letter-spacing: 0.05em;
 }
 
-/* ── Image drop on question inputs ── */
-.q-input.drag-over {
+/* ── Image drop on question/answer inputs ── */
+.q-input.drag-over,
+.a-input.drag-over,
+.final-input.drag-over {
   border-color: var(--gold);
   background: rgba(245, 197, 24, 0.08);
   outline: 2px dashed var(--gold);
