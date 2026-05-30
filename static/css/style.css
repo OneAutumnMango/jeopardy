@@ -1273,6 +1273,39 @@ body {
   background: rgba(200, 0, 0, 0.85);
 }
 
+/* ── Image lightbox overlay (edit board) ── */
+#img-lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+#img-lightbox.active {
+  display: flex;
+}
+#img-lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+#img-lightbox img {
+  position: relative;
+  max-width: 90vw;
+  max-height: 88vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+  pointer-events: none;
+}
+.q-img-thumb {
+  cursor: zoom-in;
+}
+
 /* ── Image in overlay / player view ── */
 .overlay-question-img {
   max-width: 100%;

@@ -125,6 +125,11 @@
 
 </div>
 
+<div id="img-lightbox" role="dialog" aria-modal="true">
+  <div id="img-lightbox-backdrop"></div>
+  <img id="img-lightbox-img" src="" alt="Preview">
+</div>
+
 <script>
   const BOARDS_DATA = {
     board1: { label: "{{ boards.board1.label }}", point_multiplier: {{ boards.board1.point_multiplier }}, categories: {{ boards.board1.categories | tojson }} },

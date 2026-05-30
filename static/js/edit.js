@@ -238,6 +238,18 @@ document.addEventListener('click', (e) => {
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 
+function openImgLightbox(src) {
+  const lb = document.getElementById('img-lightbox');
+  document.getElementById('img-lightbox-img').src = src;
+  lb.classList.add('active');
+}
+
+function closeImgLightbox() {
+  const lb = document.getElementById('img-lightbox');
+  lb.classList.remove('active');
+  document.getElementById('img-lightbox-img').src = '';
+}
+
 function showToast(message, isError = false) {
   const toast = document.getElementById('toast');
   toast.textContent = message;
@@ -264,6 +276,7 @@ function showQImgPreview(textarea) {
     <img src="${src}" class="q-img-thumb" alt="Question image">
     <button type="button" class="q-img-clear" title="Remove image">✕</button>
   `;
+  preview.querySelector('.q-img-thumb').addEventListener('click', () => openImgLightbox(src));
   preview.querySelector('.q-img-clear').addEventListener('click', () => {
     textarea.value = '';
     preview.remove();
@@ -351,6 +364,10 @@ document.addEventListener('DOMContentLoaded', () => {
   loadBoard('board2');
   loadFinal();
   initImageDrop();
+
+  // Lightbox close on backdrop click or Escape
+  document.getElementById('img-lightbox-backdrop').addEventListener('click', closeImgLightbox);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeImgLightbox(); });
 
   // ── Auto-save on every change ───────────────────────────────────────────────
   let autoSaveTimer = null;
