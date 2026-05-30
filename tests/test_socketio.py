@@ -571,3 +571,334 @@ def test_dd_wager_negative_score_uses_flat_cap(host_with_round2_session):
     host.emit('host_dd_set_wager', {'code': code, 'player_name': 'Alice', 'wager': 9999})
     host.get_received()
     assert sessions[code]['dd_state']['wager'] == 2000  # flat cap, negative score ignored
+
+
+# ── restore_state on host rejoin ──────────────────────────────────────────────
+
+def test_host_join_room_emits_restore_state(host_with_session):
+    host, code = host_with_session
+    host.emit('host_join_room', {'code': code})
+    received = host.get_received()
+    event = next((e for e in received if e['name'] == 'restore_state'), None)
+    assert event is not None
+
+
+def test_restore_state_phase_is_lobby_initially(host_with_session):
+    host, code = host_with_session
+    host.emit('host_join_room', {'code': code})
+    received = host.get_received()
+    event = next(e for e in received if e['name'] == 'restore_state')
+    assert event['args'][0]['phase'] == 'lobby'
+
+
+def test_restore_state_phase_reflects_final_jeopardy(host_with_session):
+    host, code = host_with_session
+    host.emit('host_start_final', {'code': code, 'category': 'History'})
+    host.get_received()
+    host.emit('host_join_room', {'code': code})
+    received = host.get_received()
+    event = next(e for e in received if e['name'] == 'restore_state')
+    assert event['args'][0]['phase'] == 'final_jeopardy'
+
+
+def test_restore_state_contains_final_category(host_with_session):
+    host, code = host_with_session
+    host.emit('host_start_final', {'code': code, 'category': 'Science'})
+    host.get_received()
+    host.emit('host_join_room', {'code': code})
+    received = host.get_received()
+    event = next(e for e in received if e['name'] == 'restore_state')
+    assert event['args'][0]['final']['category'] == 'Science'
+
+
+def test_restore_state_contains_final_question(host_with_session):
+    host, code = host_with_session
+    host.emit('host_start_final', {'code': code, 'category': 'Test'})
+    host.get_received()
+    host.emit('host_reveal_final_question', {'code': code, 'question': 'What is 2+2?'})
+    host.get_received()
+    host.emit('host_join_room', {'code': code})
+    received = host.get_received()
+    event = next(e for e in received if e['name'] == 'restore_state')
+    assert event['args'][0]['final']['question'] == 'What is 2+2?'
+
+
+def test_restore_state_contains_wager_lists(host_with_session):
+    host, code = host_with_session
+    p = make_player(code, 'Alice')
+    p.get_received()
+    host.get_received()
+    host.emit('host_score_correct', {'code': code, 'player_name': 'Alice', 'points': 400})
+    host.emit('host_start_final', {'code': code, 'category': 'Test'})
+    host.get_received()
+    p.emit('submit_wager', {'code': code, 'amount': 200})
+    host.get_received()
+    host.emit('host_join_room', {'code': code})
+    received = host.get_received()
+    event = next(e for e in received if e['name'] == 'restore_state')
+    final = event['args'][0]['final']
+    assert 'Alice' in final['wagers']
+    assert final['wager_map']['Alice'] == 200
+    p.disconnect()
+
+
+def test_restore_state_contains_answer_lists(host_with_session):
+    host, code = host_with_session
+    p = make_player(code, 'Alice')
+    p.get_received()
+    host.get_received()
+    host.emit('host_start_final', {'code': code, 'category': 'Test'})
+    host.get_received()
+    p.emit('submit_final_answer', {'code': code, 'answer': 'Paris'})
+    host.get_received()
+    host.emit('host_join_room', {'code': code})
+    received = host.get_received()
+    event = next(e for e in received if e['name'] == 'restore_state')
+    final = event['args'][0]['final']
+    assert 'Alice' in final['answers']
+    assert final['answer_map']['Alice'] == 'Paris'
+    p.disconnect()
+
+
+def test_restore_state_contains_revealed_list(host_with_session):
+    host, code = host_with_session
+    p = make_player(code, 'Alice')
+    p.get_received()
+    host.get_received()
+    host.emit('host_start_final', {'code': code, 'category': 'Test'})
+    host.get_received()
+    sessions[code]['final']['answers']['Alice'] = 'Rome'
+    sessions[code]['final']['wagers']['Alice'] = 100
+    host.emit('host_reveal_final_answer', {'code': code, 'player_name': 'Alice'})
+    host.get_received()
+    host.emit('host_join_room', {'code': code})
+    received = host.get_received()
+    event = next(e for e in received if e['name'] == 'restore_state')
+    assert 'Alice' in event['args'][0]['final']['revealed']
+    p.disconnect()
+
+
+def test_restore_state_phase_reflects_ended(host_with_session):
+    host, code = host_with_session
+    host.emit('host_end_game', {'code': code})
+    host.get_received()
+    host.emit('host_join_room', {'code': code})
+    received = host.get_received()
+    event = next(e for e in received if e['name'] == 'restore_state')
+    assert event['args'][0]['phase'] == 'ended'
+
+
+# ── final_setup preservation ──────────────────────────────────────────────────
+
+def test_final_setup_stored_on_session_creation():
+    app.config['TESTING'] = True
+    host = socketio.test_client(app)
+    boards = default_boards()
+    setup = {'category': 'Potent Potables', 'question': 'This drink…', 'answer': 'Beer'}
+    host.emit('host_create_session', {'boards': boards, 'final_setup': setup})
+    received = host.get_received()
+    code = next(e for e in received if e['name'] == 'session_created')['args'][0]['code']
+    assert sessions[code]['final_setup'] == setup
+    host.disconnect()
+
+
+def test_final_setup_emitted_on_host_join_room(host_with_session):
+    host, code = host_with_session
+    sessions[code]['final_setup'] = {'category': 'Art', 'question': 'Q?', 'answer': 'A'}
+    host.emit('host_join_room', {'code': code})
+    received = host.get_received()
+    event = next((e for e in received if e['name'] == 'final_setup'), None)
+    assert event is not None
+    assert event['args'][0]['category'] == 'Art'
+
+
+def test_final_setup_default_when_not_provided():
+    app.config['TESTING'] = True
+    host = socketio.test_client(app)
+    boards = default_boards()
+    host.emit('host_create_session', {'boards': boards})
+    received = host.get_received()
+    code = next(e for e in received if e['name'] == 'session_created')['args'][0]['code']
+    setup = sessions[code]['final_setup']
+    assert setup['category'] == 'Final Jeopardy'
+    assert setup['question'] == ''
+    assert setup['answer'] == ''
+    host.disconnect()
+
+
+# ── host_reveal_final_question ────────────────────────────────────────────────
+
+def test_reveal_final_question_stores_text(host_with_session):
+    host, code = host_with_session
+    host.emit('host_reveal_final_question', {'code': code, 'question': 'What year?'})
+    assert sessions[code]['final']['question'] == 'What year?'
+
+
+def test_reveal_final_question_empty_string_allowed(host_with_session):
+    host, code = host_with_session
+    host.emit('host_reveal_final_question', {'code': code, 'question': ''})
+    assert sessions[code]['final']['question'] == ''
+
+
+def test_reveal_final_question_emits_event(host_with_session):
+    host, code = host_with_session
+    p = make_player(code, 'Alice')
+    p.get_received()
+    host.get_received()
+    host.emit('host_reveal_final_question', {'code': code, 'question': 'Who invented…?'})
+    received = p.get_received()
+    event = next((e for e in received if e['name'] == 'final_question_revealed'), None)
+    assert event is not None
+    assert event['args'][0]['question'] == 'Who invented…?'
+    p.disconnect()
+
+
+# ── submit_wager / all_wagers_in ──────────────────────────────────────────────
+
+def test_all_wagers_in_fires_when_all_eligible_wager(host_with_session):
+    host, code = host_with_session
+    p1 = make_player(code, 'Alice')
+    p1.get_received()
+    p2 = make_player(code, 'Bob')
+    p2.get_received()
+    host.get_received()
+    host.emit('host_start_final', {'code': code, 'category': 'Test'})
+    host.get_received()
+    p1.emit('submit_wager', {'code': code, 'amount': 0})
+    # Should not fire yet
+    events_so_far = host.get_received()
+    assert not any(e['name'] == 'all_wagers_in' for e in events_so_far)
+    p2.emit('submit_wager', {'code': code, 'amount': 0})
+    events_now = host.get_received()
+    assert any(e['name'] == 'all_wagers_in' for e in events_now)
+    p1.disconnect()
+    p2.disconnect()
+
+
+def test_all_wagers_in_excludes_negative_score_players(host_with_session):
+    host, code = host_with_session
+    p1 = make_player(code, 'Alice')
+    p1.get_received()
+    p2 = make_player(code, 'Bob')
+    p2.get_received()
+    host.get_received()
+    # Give Bob a negative score — he should be excluded from the wager requirement
+    host.emit('host_score_wrong', {'code': code, 'player_name': 'Bob', 'points': 100})
+    host.get_received()
+    host.emit('host_start_final', {'code': code, 'category': 'Test'})
+    host.get_received()
+    p1.emit('submit_wager', {'code': code, 'amount': 0})
+    events = host.get_received()
+    # Alice alone should be enough to trigger all_wagers_in since Bob is ineligible
+    assert any(e['name'] == 'all_wagers_in' for e in events)
+    p1.disconnect()
+    p2.disconnect()
+
+
+def test_wager_locked_sent_to_player(host_with_session):
+    host, code = host_with_session
+    p = make_player(code, 'Alice')
+    p.get_received()
+    host.emit('host_score_correct', {'code': code, 'player_name': 'Alice', 'points': 500})
+    host.emit('host_start_final', {'code': code, 'category': 'Test'})
+    host.get_received()
+    p.emit('submit_wager', {'code': code, 'amount': 300})
+    received = p.get_received()
+    event = next((e for e in received if e['name'] == 'wager_locked'), None)
+    assert event is not None
+    assert event['args'][0]['amount'] == 300
+    p.disconnect()
+
+
+# ── submit_final_answer / all_answers_in ──────────────────────────────────────
+
+def test_all_answers_in_fires_when_all_eligible_answer(host_with_session):
+    host, code = host_with_session
+    p1 = make_player(code, 'Alice')
+    p1.get_received()
+    p2 = make_player(code, 'Bob')
+    p2.get_received()
+    host.get_received()
+    host.emit('host_start_final', {'code': code, 'category': 'Test'})
+    host.get_received()
+    p1.emit('submit_final_answer', {'code': code, 'answer': 'Paris'})
+    events_so_far = host.get_received()
+    assert not any(e['name'] == 'all_answers_in' for e in events_so_far)
+    p2.emit('submit_final_answer', {'code': code, 'answer': 'London'})
+    events_now = host.get_received()
+    assert any(e['name'] == 'all_answers_in' for e in events_now)
+    p1.disconnect()
+    p2.disconnect()
+
+
+def test_final_answer_submitted_event_sent_to_host(host_with_session):
+    host, code = host_with_session
+    p = make_player(code, 'Alice')
+    p.get_received()
+    host.get_received()
+    host.emit('host_start_final', {'code': code, 'category': 'Test'})
+    host.get_received()
+    p.emit('submit_final_answer', {'code': code, 'answer': 'Berlin'})
+    received = host.get_received()
+    event = next((e for e in received if e['name'] == 'final_answer_submitted'), None)
+    assert event is not None
+    assert event['args'][0]['name'] == 'Alice'
+    p.disconnect()
+
+
+def test_all_answers_in_excludes_negative_score_players(host_with_session):
+    host, code = host_with_session
+    p1 = make_player(code, 'Alice')
+    p1.get_received()
+    p2 = make_player(code, 'Bob')
+    p2.get_received()
+    host.get_received()
+    host.emit('host_score_wrong', {'code': code, 'player_name': 'Bob', 'points': 100})
+    host.get_received()
+    host.emit('host_start_final', {'code': code, 'category': 'Test'})
+    host.get_received()
+    p1.emit('submit_final_answer', {'code': code, 'answer': 'Tokyo'})
+    events = host.get_received()
+    assert any(e['name'] == 'all_answers_in' for e in events)
+    p1.disconnect()
+    p2.disconnect()
+
+
+# ── host_reveal_final_answer ──────────────────────────────────────────────────
+
+def test_reveal_final_answer_appends_to_revealed(host_with_session):
+    host, code = host_with_session
+    sessions[code]['final']['answers']['Alice'] = 'Everest'
+    sessions[code]['final']['wagers']['Alice'] = 150
+    host.emit('host_reveal_final_answer', {'code': code, 'player_name': 'Alice'})
+    assert 'Alice' in sessions[code]['final']['revealed']
+
+
+def test_reveal_final_answer_emits_correct_data(host_with_session):
+    host, code = host_with_session
+    p = make_player(code, 'Alice')
+    p.get_received()
+    host.get_received()
+    sessions[code]['final']['answers']['Alice'] = 'Everest'
+    sessions[code]['final']['wagers']['Alice'] = 250
+    host.emit('host_reveal_final_answer', {'code': code, 'player_name': 'Alice'})
+    received = host.get_received()
+    event = next((e for e in received if e['name'] == 'final_answer_revealed'), None)
+    assert event is not None
+    args = event['args'][0]
+    assert args['name'] == 'Alice'
+    assert args['answer'] == 'Everest'
+    assert args['wager'] == 250
+    p.disconnect()
+
+
+def test_reveal_final_answer_missing_answer_defaults_empty(host_with_session):
+    host, code = host_with_session
+    # No answer submitted — should default to empty string, not crash
+    host.emit('host_reveal_final_answer', {'code': code, 'player_name': 'Alice'})
+    received = host.get_received()
+    event = next((e for e in received if e['name'] == 'final_answer_revealed'), None)
+    assert event is not None
+    assert event['args'][0]['answer'] == ''
+    assert event['args'][0]['wager'] == 0
+
