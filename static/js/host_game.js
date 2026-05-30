@@ -178,6 +178,86 @@ socket.on('final_setup', (setup) => {
   if (qInput && !qInput.value) qInput.value = setup.question || '';
 });
 
+socket.on('restore_state', ({ phase, final }) => {
+  if (phase !== 'final_jeopardy' && phase !== 'ended') return;
+
+  // Switch UI from board view to final section
+  document.getElementById('board-section').classList.add('hidden');
+  document.getElementById('final-section').classList.remove('hidden');
+
+  if (phase === 'ended') return;  // game already over, scores panel sufficient
+
+  const category = final.category || 'Final Jeopardy';
+
+  // Restore JS state
+  foCategory = category;
+  foWagered = new Set(final.wagers || []);
+  foAnswered = new Set(final.answers || []);
+  foRevealed = new Set(final.revealed || []);
+  foScored   = new Set(final.revealed || []);  // already scored if revealed
+  foPhase    = final.question ? 'answer' : 'wager';
+  foIntroPhase = 'active';
+
+  // Populate category labels
+  document.getElementById('fo-category').textContent = category;
+  document.getElementById('fo-category-label').textContent = category;
+
+  // Skip intro screens, go straight to the active panel
+  document.getElementById('fo-title-screen').classList.add('hidden');
+  document.getElementById('fo-category-screen').classList.add('hidden');
+  document.getElementById('fo-main-screen').classList.remove('hidden');
+  document.getElementById('fo-players').classList.remove('hidden');
+  document.getElementById('fo-phase-label').classList.remove('hidden');
+  document.getElementById('fo-final-scores').classList.add('hidden');
+
+  // Show overlay
+  const overlay = document.getElementById('final-overlay');
+  overlay.classList.remove('hidden');
+  overlay.classList.add('active');
+
+  if (foPhase === 'wager') {
+    document.getElementById('fo-question-wrap').classList.add('hidden');
+    document.getElementById('fo-proceed-btn').disabled = foWagered.size === 0;
+    document.getElementById('fo-phase-label').textContent =
+      foWagered.size > 0 ? 'All wagers in — proceed when ready' : 'Waiting for wagers…';
+    renderFoPlayers();
+  } else {
+    // Answer phase — question already revealed
+    document.getElementById('fo-question-wrap').classList.remove('hidden');
+    document.getElementById('fo-question').textContent = final.question || '';
+    document.getElementById('fo-proceed-btn').classList.add('hidden');
+    // Determine label
+    const allAnswered = scores.filter(s => s.score >= 0).every(s => foAnswered.has(s.name));
+    if (foRevealed.size > 0) {
+      document.getElementById('fo-phase-label').textContent = 'Reveal answers one by one';
+    } else if (allAnswered) {
+      document.getElementById('fo-phase-label').textContent = 'All answers in — reveal one by one';
+    } else {
+      document.getElementById('fo-phase-label').textContent = 'Waiting for answers…';
+    }
+    renderFoPlayers();
+    // Re-apply revealed state for each player
+    (final.revealed || []).forEach(name => {
+      const id = cssId(name);
+      const ansDiv = document.getElementById(`fo-ans-text-${id}`);
+      const answer = (final.answer_map || {})[name] || '';
+      const wager  = (final.wager_map  || {})[name] || 0;
+      if (ansDiv) { ansDiv.textContent = `"${answer}" — wagered €${wager}`; ansDiv.classList.remove('hidden'); }
+      const revealBtn = document.getElementById(`fo-reveal-btn-${id}`);
+      if (revealBtn) revealBtn.classList.add('hidden');
+      const scoreBtns = document.getElementById(`fo-score-btns-${id}`);
+      if (scoreBtns) scoreBtns.classList.add('hidden');  // already scored
+    });
+    // Enable reveal buttons for players who answered but weren't revealed yet
+    (final.answers || []).forEach(name => {
+      if (!foRevealed.has(name)) {
+        const revealBtn = document.getElementById(`fo-reveal-btn-${cssId(name)}`);
+        if (revealBtn) revealBtn.disabled = false;
+      }
+    });
+  }
+});
+
 // ── Question content renderer ─────────────────────────────────────────────────
 
 function renderQuestionContent(text, el) {
@@ -263,15 +343,11 @@ function proceedRound() {
     socket.emit('host_next_round', { code: SESSION_CODE });
     // round_changed will trigger page reload
   } else {
-    // Show final jeopardy section, hide board
+    // Skip the setup screen and go straight to the Final Jeopardy overlay
     document.getElementById('board-section').classList.add('hidden');
     document.getElementById('final-section').classList.remove('hidden');
     renderFinalPlayersList();
-    // Auto-start with pre-configured data if available
-    const catInput = document.getElementById('final-category-input');
-    if (catInput && catInput.value.trim()) {
-      startFinal();
-    }
+    startFinal();
   }
 }
 

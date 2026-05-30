@@ -305,6 +305,20 @@ def on_host_join_room(data):
     emit("final_setup", sess.get("final_setup", {"category": "Final Jeopardy", "question": "", "answer": ""}))
     if sess.get("daily_doubles"):
         emit("dd_tiles_set", {"question_ids": list(sess["daily_doubles"])})
+    # Restore full game state so a host page reload can recover
+    final = sess.get("final", {})
+    emit("restore_state", {
+        "phase": sess.get("phase", "lobby"),
+        "final": {
+            "category": final.get("category", ""),
+            "question": final.get("question", ""),
+            "wagers": list(final.get("wagers", {}).keys()),
+            "answers": list(final.get("answers", {}).keys()),
+            "revealed": final.get("revealed", []),
+            "answer_map": final.get("answers", {}),
+            "wager_map": final.get("wagers", {}),
+        }
+    })
 
 
 @socketio.on("player_join")
