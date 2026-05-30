@@ -86,11 +86,7 @@ socket.on('daily_double_wager_set', ({ player_name, wager }) => {
 
 socket.on('tile_revealed', ({ question, points, is_daily_double, dd_player, dd_wager }) => {
   document.getElementById('dd-announcement').classList.add('hidden');
-  document.getElementById('current-points').textContent = is_daily_double
-    ? `DAILY DOUBLE — €${dd_wager}`
-    : `€${points}`;
-  renderQuestionContent(question, document.getElementById('current-question'));
-  document.getElementById('question-display').classList.remove('hidden');
+  document.getElementById('question-display').classList.add('hidden');
   document.getElementById('answer-display').classList.add('hidden');
   canBuzz = !is_daily_double;
   const btn = document.getElementById('buzz-btn');
@@ -101,8 +97,6 @@ socket.on('tile_revealed', ({ question, points, is_daily_double, dd_player, dd_w
 });
 
 socket.on('answer_revealed', ({ answer }) => {
-  document.getElementById('current-answer').textContent = answer;
-  document.getElementById('answer-display').classList.remove('hidden');
   canBuzz = false;
   document.getElementById('buzz-btn').disabled = true;
 });
