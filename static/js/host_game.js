@@ -283,6 +283,13 @@ function renderQuestionContent(text, el) {
 }
 
 // ── Overlay helpers ─────────────────────────────────────────────────────────
+function hostUnblurQuestion() {
+  const textEl = document.getElementById('host-overlay-text');
+  const hint = document.getElementById('host-overlay-blur-hint');
+  if (textEl) textEl.classList.remove('question-blurred');
+  if (hint) hint.classList.add('hidden');
+}
+
 function openHostOverlay(question, points, isDailyDouble, ddPlayer) {
   const overlay = document.getElementById('host-tile-overlay');
   const pointsEl = document.getElementById('host-overlay-points');
@@ -294,6 +301,9 @@ function openHostOverlay(question, points, isDailyDouble, ddPlayer) {
   const textEl = document.getElementById('host-overlay-text');
   renderQuestionContent(question, textEl);
   textEl.className = 'overlay-text question-text';
+  // Ensure no leftover blur from a previous question
+  const hint = document.getElementById('host-overlay-blur-hint');
+  if (hint) hint.classList.add('hidden');
   document.getElementById('host-reveal-answer-btn').disabled = false;
 
   // For DD, hide the buzz queue and pre-populate score controls
@@ -373,6 +383,14 @@ function renderOverlayBuzzQueue() {
     el.innerHTML = '';
     if (ctrl) ctrl.classList.add('hidden');
     return;
+  }
+
+  // Blur question on first buzz
+  const textEl = document.getElementById('host-overlay-text');
+  const hint = document.getElementById('host-overlay-blur-hint');
+  if (textEl && !textEl.classList.contains('answer-text') && !textEl.classList.contains('question-blurred')) {
+    textEl.classList.add('question-blurred');
+    if (hint) hint.classList.remove('hidden');
   }
 
   el.innerHTML = queue.map((name, i) => {

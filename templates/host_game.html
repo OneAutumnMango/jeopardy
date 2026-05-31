@@ -111,7 +111,8 @@
   <div id="host-tile-overlay" class="tile-overlay host-tile-overlay hidden" style="z-index:600">
     <div class="tile-overlay-content">
       <div id="host-overlay-points" class="overlay-points"></div>
-      <div id="host-overlay-text" class="overlay-text question-text"></div>
+      <div id="host-overlay-text" class="overlay-text question-text" onclick="hostUnblurQuestion()"></div>
+      <div id="host-overlay-blur-hint" class="hidden">👁 Click question to reveal</div>
       <div class="overlay-actions" style="margin-top:1rem">
         <button id="host-reveal-answer-btn" class="btn btn-gold" onclick="hostRevealAnswer()">Reveal Answer</button>
         <button class="btn btn-secondary" onclick="hostMarkUsed()">Mark Used &amp; Close</button>

@@ -501,6 +501,21 @@ body {
 }
 .overlay-text.question-text { color: var(--white); }
 .overlay-text.answer-text   { color: var(--gold); font-style: italic; }
+.overlay-text.question-blurred { filter: blur(18px); transition: filter 0.3s; }
+
+.host-tile-overlay .overlay-text.question-blurred { pointer-events: all; cursor: pointer; }
+
+#host-overlay-blur-hint {
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.82rem;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.4rem;
+  text-align: center;
+  opacity: 0.75;
+}
+#host-overlay-blur-hint.hidden { display: none; }
 
 .overlay-hint {
   color: var(--muted);
