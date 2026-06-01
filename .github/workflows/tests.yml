@@ -7,6 +7,11 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write   # needed to post/update PR coverage comment
+
     steps:
       - uses: actions/checkout@v4
 
@@ -14,9 +19,41 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Create venv & install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -r requirements.txt
 
-      - name: Run tests
-        run: pytest tests/ -v
+      - name: Run tests with coverage
+        run: |
+          .venv/bin/pytest tests/ -v \
+            --cov=app \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-report=html:htmlcov \
+            --junitxml=junit.xml
+
+      - name: Post coverage comment on PR & job summary
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/pytest-coverage-comment@v1.7.2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pytest-xml-coverage-path: coverage.xml
+          junitxml-path: junit.xml
+          title: "Coverage Report"
+          badge-title: "Coverage"
+          hide-badge: false
+          hide-report: false
+          create-new-comment: false   # update existing comment instead of spamming
+          default-branch: main
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: htmlcov/
+          retention-days: 14

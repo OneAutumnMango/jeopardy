@@ -4,3 +4,4 @@ gunicorn>=21.0
 gevent
 gevent-websocket
 pytest>=8.0
+pytest-cov>=5.0
