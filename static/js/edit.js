@@ -351,7 +351,16 @@ function initImageDrop() {
     });
   });
 }
+// ── Auto-resize textareas ─────────────────────────────────────────────────────
 
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function autoResizeAll() {
+  document.querySelectorAll('.q-input, .a-input').forEach(autoResize);
+}
 // ── Cell drag-to-swap ────────────────────────────────────────────────────────
 
 let _dragSourceCell = null;
@@ -379,10 +388,12 @@ function _setCellValues(cell, vals) {
     qInput.value = vals.question;
     if (vals.question.startsWith('[img]')) showQImgPreview(qInput);
     qInput.dispatchEvent(new Event('input', { bubbles: true }));
+    autoResize(qInput);
   }
   if (aInput) {
     aInput.value = vals.answer;
     aInput.dispatchEvent(new Event('input', { bubbles: true }));
+    autoResize(aInput);
   }
   if (nddInput) nddInput.checked = !vals.dd_eligible;
 }
@@ -498,6 +509,12 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFinal();
   initImageDrop();
   initCellSwap();
+  autoResizeAll();
+
+  // Keep textareas expanded as the user types
+  document.addEventListener('input', (e) => {
+    if (e.target.matches('.q-input, .a-input')) autoResize(e.target);
+  });
 
   // Lightbox close on backdrop click or Escape
   document.getElementById('img-lightbox-backdrop').addEventListener('click', closeImgLightbox);

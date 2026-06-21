@@ -311,7 +311,8 @@ body {
   font-family: 'Roboto', sans-serif;
   font-size: 0.85rem;
   padding: 0.4rem 0.5rem;
-  resize: vertical;
+  resize: none;
+  overflow: hidden;
   transition: border-color 0.2s;
 }
 
@@ -523,6 +524,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 2rem;
+  width: 100%;
   max-width: 900px;
   padding: 4rem 3rem;
   text-align: center;
@@ -542,6 +544,10 @@ body {
   font-size: clamp(1.6rem, 4vw, 3rem);
   font-weight: 600;
   line-height: 1.3;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  width: 100%;
+  white-space: pre-wrap;
 }
 .overlay-text.question-text { color: var(--white); }
 .overlay-text.answer-text   { color: var(--gold); font-style: italic; }
