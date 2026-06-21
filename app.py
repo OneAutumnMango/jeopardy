@@ -224,6 +224,13 @@ def game(board_id):
     return render_template("game.html", board=boards[board_id], board_id=board_id)
 
 
+@app.route("/game/final")
+def game_final():
+    boards = load_boards()
+    final = boards.get("final", {"category": "", "question": "", "answer": ""})
+    return render_template("game_final.html", final=final)
+
+
 @app.route("/api/board/<board_id>")
 def api_board(board_id):
     boards = load_boards()

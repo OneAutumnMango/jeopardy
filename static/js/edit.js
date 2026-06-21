@@ -16,8 +16,10 @@ function switchTab(btn) {
   const tab = btn.dataset.tab;
   const tb1 = document.getElementById('test-board1-btn');
   const tb2 = document.getElementById('test-board2-btn');
+  const tbf = document.getElementById('test-final-btn');
   if (tb1) tb1.classList.toggle('hidden', tab !== 'tab-board1');
   if (tb2) tb2.classList.toggle('hidden', tab !== 'tab-board2');
+  if (tbf) tbf.classList.toggle('hidden', tab !== 'tab-final');
 }
 
 // ── Serialize ─────────────────────────────────────────────────────────────────

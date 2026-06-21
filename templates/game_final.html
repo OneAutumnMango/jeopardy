@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Final Jeopardy – Test{% endblock %}
+{% block content %}
+<div class="game-container">
+  <div class="game-header">
+    <h1 class="game-title">Final Jeopardy</h1>
+    <div class="game-controls">
+      <a href="{{ url_for('edit_boards') }}#tab-final" class="btn btn-secondary">Back to Edit</a>
+      <button class="btn btn-secondary" onclick="reset()">Reset</button>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:2rem;padding:2rem">
+
+    <!-- Category -->
+    <div id="stage-category" style="text-align:center">
+      <div style="font-family:'Oswald',sans-serif;font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Category</div>
+      <div id="category-text" class="overlay-text" style="font-size:clamp(2rem,5vw,4rem);color:var(--gold)"></div>
+      <button class="btn btn-gold" style="margin-top:2rem" onclick="showQuestion()">Reveal Question</button>
+    </div>
+
+    <!-- Question -->
+    <div id="stage-question" style="text-align:center;display:none;max-width:800px">
+      <div style="font-family:'Oswald',sans-serif;font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Question</div>
+      <div id="question-text" class="overlay-text question-text"></div>
+      <button class="btn btn-gold" style="margin-top:2rem" onclick="showAnswer()">Reveal Answer</button>
+    </div>
+
+    <!-- Answer -->
+    <div id="stage-answer" style="text-align:center;display:none;max-width:800px">
+      <div style="font-family:'Oswald',sans-serif;font-size:0.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem">Answer</div>
+      <div id="answer-text" class="overlay-text answer-text"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const LS_KEY = 'jeopardy-final';
+const SERVER = {{ final | tojson }};
+
+function load() {
+  const raw = localStorage.getItem(LS_KEY);
+  let d = SERVER;
+  if (raw) {
+    try { d = JSON.parse(raw); } catch {}
+  }
+  document.getElementById('category-text').textContent = d.category || '(no category)';
+
+  const qEl = document.getElementById('question-text');
+  const q = d.question || '';
+  if (q.startsWith('[img]')) {
+    const capIdx = q.indexOf('[cap]');
+    const src = capIdx === -1 ? q.slice(5) : q.slice(5, capIdx);
+    const cap = capIdx === -1 ? '' : q.slice(capIdx + 5);
+    qEl.innerHTML = `<img src="${src}" style="max-width:100%;max-height:45vh;border-radius:6px">` +
+      (cap ? `<div class="overlay-img-caption">${cap}</div>` : '');
+  } else {
+    qEl.textContent = q || '(no question)';
+  }
+
+  const aEl = document.getElementById('answer-text');
+  const a = d.answer || '';
+  if (a.startsWith('[img]')) {
+    const capIdx = a.indexOf('[cap]');
+    const src = capIdx === -1 ? a.slice(5) : a.slice(5, capIdx);
+    const cap = capIdx === -1 ? '' : a.slice(capIdx + 5);
+    aEl.innerHTML = `<img src="${src}" style="max-width:100%;max-height:45vh;border-radius:6px">` +
+      (cap ? `<div class="overlay-img-caption">${cap}</div>` : '');
+  } else {
+    aEl.textContent = a || '(no answer)';
+  }
+}
+
+function showQuestion() {
+  document.getElementById('stage-category').style.display = 'none';
+  document.getElementById('stage-question').style.display = 'block';
+}
+
+function showAnswer() {
+  document.getElementById('stage-answer').style.display = 'block';
+  document.getElementById('stage-question').querySelector('button').style.display = 'none';
+}
+
+function reset() {
+  document.getElementById('stage-category').style.display = 'block';
+  document.getElementById('stage-question').style.display = 'none';
+  document.getElementById('stage-answer').style.display = 'none';
+  document.getElementById('stage-question').querySelector('button').style.display = '';
+}
+
+document.addEventListener('DOMContentLoaded', load);
+</script>
+{% endblock %}
