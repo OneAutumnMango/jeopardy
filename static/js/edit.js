@@ -268,6 +268,31 @@ function showToast(message, isError = false) {
 
 const IMG_MAX_BYTES = 20 * 1024 * 1024; // 20 MB — matches server MAX_CONTENT_LENGTH
 
+function uploadImageToTextarea(file, textarea) {
+  if (!file.type.startsWith('image/')) {
+    showToast('Only image files can be used here', true);
+    return;
+  }
+  if (file.size > IMG_MAX_BYTES) {
+    showToast(`Image too large — max ${IMG_MAX_BYTES / 1024 / 1024} MB (this file is ${(file.size / 1024 / 1024).toFixed(1)} MB)`, true);
+    return;
+  }
+  const existingText = textarea.value.trim();
+  const preCaption = (existingText && !existingText.startsWith('[img]')) ? existingText : '';
+  const formData = new FormData();
+  formData.append('file', file);
+  showToast('Uploading image…');
+  fetch('/upload/image', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { showToast(data.error, true); return; }
+      textarea.value = preCaption ? `[img]${data.url}[cap]${preCaption}` : `[img]${data.url}`;
+      showQImgPreview(textarea);
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    })
+    .catch(() => showToast('Upload failed', true));
+}
+
 function showQImgPreview(textarea) {
   // Check if the preview already exists immediately after this textarea
   let preview = (textarea.nextElementSibling && textarea.nextElementSibling.classList.contains('q-img-preview'))
@@ -332,28 +357,15 @@ function initImageDrop() {
       textarea.classList.remove('drag-over');
       const file = e.dataTransfer.files[0];
       if (!file) return;
-      if (!file.type.startsWith('image/')) {
-        showToast('Only image files can be dropped here', true);
-        return;
-      }
-      if (file.size > IMG_MAX_BYTES) {
-        showToast(`Image too large — max ${IMG_MAX_BYTES / 1024 / 1024} MB (this file is ${(file.size / 1024 / 1024).toFixed(1)} MB)`, true);
-        return;
-      }
-      const existingText = textarea.value.trim();
-      const preCaption = (existingText && !existingText.startsWith('[img]')) ? existingText : '';
-      const formData = new FormData();
-      formData.append('file', file);
-      showToast('Uploading image…');
-      fetch('/upload/image', { method: 'POST', body: formData })
-        .then(r => r.json())
-        .then(data => {
-          if (data.error) { showToast(data.error, true); return; }
-          textarea.value = preCaption ? `[img]${data.url}[cap]${preCaption}` : `[img]${data.url}`;
-          showQImgPreview(textarea);
-          textarea.dispatchEvent(new Event('input', { bubbles: true }));
-        })
-        .catch(() => showToast('Upload failed', true));
+      uploadImageToTextarea(file, textarea);
+    });
+    textarea.addEventListener('paste', (e) => {
+      const items = Array.from(e.clipboardData?.items || []);
+      const imgItem = items.find(i => i.type.startsWith('image/'));
+      if (!imgItem) return; // let normal paste happen
+      e.preventDefault();
+      const file = imgItem.getAsFile();
+      if (file) uploadImageToTextarea(file, textarea);
     });
   });
 }
