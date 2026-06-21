@@ -1329,10 +1329,12 @@ body {
 /* Caption rendered below image in overlay */
 .overlay-img-caption {
   margin-top: 0.75rem;
-  font-size: 1.1rem;
-  color: var(--text);
+  font-size: clamp(1.6rem, 4vw, 3rem);
+  font-family: 'Oswald', sans-serif;
+  font-weight: 600;
+  color: var(--white);
   text-align: center;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 /* ── Image lightbox overlay (edit board) ── */

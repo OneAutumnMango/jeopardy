@@ -332,6 +332,8 @@ function initImageDrop() {
         showToast(`Image too large — max ${IMG_MAX_BYTES / 1024 / 1024} MB (this file is ${(file.size / 1024 / 1024).toFixed(1)} MB)`, true);
         return;
       }
+      const existingText = textarea.value.trim();
+      const preCaption = (existingText && !existingText.startsWith('[img]')) ? existingText : '';
       const formData = new FormData();
       formData.append('file', file);
       showToast('Uploading image…');
@@ -339,7 +341,7 @@ function initImageDrop() {
         .then(r => r.json())
         .then(data => {
           if (data.error) { showToast(data.error, true); return; }
-          textarea.value = `[img]${data.url}`;
+          textarea.value = preCaption ? `[img]${data.url}[cap]${preCaption}` : `[img]${data.url}`;
           showQImgPreview(textarea);
           textarea.dispatchEvent(new Event('input', { bubbles: true }));
         })
