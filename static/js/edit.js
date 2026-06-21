@@ -365,7 +365,18 @@ function autoResize(el) {
 }
 
 function autoResizeAll() {
-  document.querySelectorAll('.q-input, .a-input').forEach(autoResize);
+  document.querySelectorAll('.q-input, .a-input, .q-img-caption-input').forEach(el => {
+    // If the element is inside a hidden panel, temporarily reveal it to measure
+    const panel = el.closest('.tab-panel.hidden');
+    if (panel) {
+      panel.style.cssText = 'display:block;visibility:hidden;position:absolute;pointer-events:none';
+      autoResize(el);
+      panel.style.cssText = '';
+      panel.classList.add('hidden');
+    } else {
+      autoResize(el);
+    }
+  });
 }
 // ── Cell drag-to-swap ────────────────────────────────────────────────────────
 
@@ -524,6 +535,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initImageDrop();
   initCellSwap();
   autoResizeAll();
+
+  // Re-run after fonts finish loading — scrollHeight can be wrong if measured
+  // before web fonts are ready (DOMContentLoaded fires before font load).
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => autoResizeAll());
+  }
+  window.addEventListener('load', () => autoResizeAll());
 
   // Keep textareas expanded as the user types
   document.addEventListener('input', (e) => {
