@@ -109,3 +109,40 @@ def test_questions_have_required_fields():
         for cat in board["categories"]:
             for q in cat["questions"]:
                 assert required.issubset(q.keys()), f"Missing fields in {board_id}/{cat['id']}"
+
+
+def test_default_questions_have_no_dd_eligible_field():
+    """Default questions omit dd_eligible so _pick_daily_doubles treats them all as eligible."""
+    boards = default_boards()
+    for board_id, board in boards.items():
+        for cat in board["categories"]:
+            for q in cat["questions"]:
+                assert "dd_eligible" not in q, (
+                    f"dd_eligible should not be present by default in {board_id}/{cat['id']}/{q['id']}"
+                )
+
+
+def test_dd_eligible_false_persists_through_save_load(tmp_path, monkeypatch):
+    import app
+    test_file = str(tmp_path / "boards.json")
+    monkeypatch.setattr(app, "DATA_FILE", test_file)
+
+    boards = default_boards()
+    boards["board1"]["categories"][0]["questions"][0]["dd_eligible"] = False
+    save_boards(boards)
+
+    loaded = load_boards()
+    assert loaded["board1"]["categories"][0]["questions"][0]["dd_eligible"] is False
+
+
+def test_dd_eligible_true_persists_through_save_load(tmp_path, monkeypatch):
+    import app
+    test_file = str(tmp_path / "boards.json")
+    monkeypatch.setattr(app, "DATA_FILE", test_file)
+
+    boards = default_boards()
+    boards["board1"]["categories"][1]["questions"][2]["dd_eligible"] = True
+    save_boards(boards)
+
+    loaded = load_boards()
+    assert loaded["board1"]["categories"][1]["questions"][2]["dd_eligible"] is True
