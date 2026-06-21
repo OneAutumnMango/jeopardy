@@ -20,6 +20,7 @@ function switchTab(btn) {
   if (tb1) tb1.classList.toggle('hidden', tab !== 'tab-board1');
   if (tb2) tb2.classList.toggle('hidden', tab !== 'tab-board2');
   if (tbf) tbf.classList.toggle('hidden', tab !== 'tab-final');
+  autoResizeAll();
 }
 
 // ── Serialize ─────────────────────────────────────────────────────────────────
