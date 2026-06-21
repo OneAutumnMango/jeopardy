@@ -1,7 +1,7 @@
 services:
   jeopardy:
     container_name: jeopardy
-    image: ghcr.io/oneautumnmango/jeopardy:1.3.0
+    image: ghcr.io/oneautumnmango/jeopardy:latest
     ports:
       - "5000:5000"
     volumes:
