@@ -8,6 +8,7 @@
       <!-- Test buttons -->
       <a id="test-board1-btn" href="{{ url_for('game', board_id='board1') }}" class="btn btn-gold">Test Board 1</a>
       <a id="test-board2-btn" href="{{ url_for('game', board_id='board2') }}" class="btn btn-gold hidden">Test Board 2</a>
+      <a id="test-final-btn" href="{{ url_for('game_final') }}" class="btn btn-gold hidden">Test Final Jeopardy</a>
       <!-- Export split button -->
       <div class="dropdown-wrap split-btn-wrap">
         <div class="split-btn btn-secondary">
@@ -74,6 +75,7 @@
         <textarea class="q-input" data-board="board1" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="3" placeholder="Enter question…">{{ q.question }}</textarea>
         <label class="cell-label">Answer</label>
         <textarea class="a-input" data-board="board1" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="2" placeholder="Enter answer…">{{ q.answer }}</textarea>
+        <label class="no-dd-label"><input type="checkbox" class="no-dd-input" data-board="board1" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}"{% if q.dd_eligible is defined and not q.dd_eligible %} checked{% endif %}>No Daily Double</label>
       </div>
       {% endfor %}
       {% endfor %}
@@ -99,6 +101,7 @@
         <textarea class="q-input" data-board="board2" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="3" placeholder="Enter question…">{{ q.question }}</textarea>
         <label class="cell-label">Answer</label>
         <textarea class="a-input" data-board="board2" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="2" placeholder="Enter answer…">{{ q.answer }}</textarea>
+        <label class="no-dd-label"><input type="checkbox" class="no-dd-input" data-board="board2" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}"{% if q.dd_eligible is defined and not q.dd_eligible %} checked{% endif %}>No Daily Double</label>
       </div>
       {% endfor %}
       {% endfor %}

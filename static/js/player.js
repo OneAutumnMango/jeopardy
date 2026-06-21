@@ -11,6 +11,10 @@ let hasSubmittedAnswer = false;
 
 // ── Question content renderer ─────────────────────────────────────────────────
 
+function spaceUnderscores(text) {
+  return text.replace(/_+/g, m => Array.from(m).join('\u202F'));
+}
+
 function renderQuestionContent(text, el) {
   if (text && text.startsWith('[img]')) {
     el.textContent = '';
@@ -19,7 +23,7 @@ function renderQuestionContent(text, el) {
     img.className = 'overlay-question-img';
     el.appendChild(img);
   } else {
-    el.textContent = text || '';
+    el.textContent = spaceUnderscores(text || '');
   }
 }
 

@@ -113,6 +113,34 @@ def test_final_edit_returns_200(client):
     assert res.status_code == 200
 
 
+# ── /game/final ───────────────────────────────────────────────────────────────
+
+def test_game_final_returns_200(client):
+    res = client.get("/game/final")
+    assert res.status_code == 200
+
+
+def test_game_final_renders_without_final_key(client, data_file):
+    """boards.json may not have a 'final' key; route should still return 200."""
+    import json
+    boards = default_boards()  # no 'final' key
+    with open(data_file, 'w') as f:
+        json.dump(boards, f)
+    res = client.get("/game/final")
+    assert res.status_code == 200
+
+
+def test_game_final_renders_saved_category(client, data_file):
+    """Category saved to boards.json appears in the rendered page."""
+    import json
+    boards = default_boards()
+    boards["final"] = {"category": "Famous Robots", "question": "Q", "answer": "A"}
+    with open(data_file, 'w') as f:
+        json.dump(boards, f)
+    res = client.get("/game/final")
+    assert b"Famous Robots" in res.data
+
+
 # ── /edit ─────────────────────────────────────────────────────────────────────
 
 def test_edit_boards_returns_200(client):
@@ -149,6 +177,25 @@ def test_admin_save_null_json_returns_400(client):
     assert res.status_code == 400
     body = json.loads(res.data)
     assert body["status"] == "error"
+
+
+def test_admin_save_preserves_dd_eligible(client, data_file, monkeypatch):
+    """dd_eligible flag saved via admin endpoint must round-trip to disk."""
+    monkeypatch.setattr(flask_app, "DATA_FILE", data_file)
+    boards = default_boards()
+    boards["board1"]["categories"][0]["questions"][0]["dd_eligible"] = False
+    payload = boards["board1"]
+
+    res = client.post(
+        "/admin/board1/save",
+        data=json.dumps(payload),
+        content_type="application/json",
+    )
+    assert res.status_code == 200
+
+    with open(data_file) as f:
+        saved = json.load(f)
+    assert saved["board1"]["categories"][0]["questions"][0]["dd_eligible"] is False
 
 
 # ── /upload/image ─────────────────────────────────────────────────────────────

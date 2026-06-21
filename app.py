@@ -76,7 +76,12 @@ def save_boards(data):
 
 def _pick_daily_doubles(board: dict, count: int = 2) -> set:
     """Randomly select `count` question IDs from a board for Daily Double."""
-    all_ids = [q["id"] for cat in board.get("categories", []) for q in cat.get("questions", [])]
+    all_ids = [
+        q["id"]
+        for cat in board.get("categories", [])
+        for q in cat.get("questions", [])
+        if q.get("dd_eligible", True)
+    ]
     return set(random.sample(all_ids, min(count, len(all_ids))))
 
 
@@ -217,6 +222,13 @@ def game(board_id):
     if board_id not in boards:
         abort(404)
     return render_template("game.html", board=boards[board_id], board_id=board_id)
+
+
+@app.route("/game/final")
+def game_final():
+    boards = load_boards()
+    final = boards.get("final", {"category": "", "question": "", "answer": ""})
+    return render_template("game_final.html", final=final)
 
 
 @app.route("/api/board/<board_id>")
