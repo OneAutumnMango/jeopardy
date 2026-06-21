@@ -252,6 +252,8 @@ body {
   letter-spacing: 0.08em;
   margin-bottom: 0.25rem;
   margin-top: 0.5rem;
+  user-select: none;
+  cursor: inherit;
 }
 
 .cell-label:first-child { margin-top: 0; }
@@ -268,6 +270,20 @@ body {
 .admin-cell.question-cell button,
 .admin-cell.question-cell .q-img-preview {
   cursor: auto;
+  user-select: text;
+}
+
+/* Category header drag */
+.admin-cell.header-cell:not(.corner-cell):not(.points-label) {
+  cursor: grab;
+  user-select: none;
+}
+.admin-cell.header-cell:not(.corner-cell):not(.points-label):active {
+  cursor: grabbing;
+}
+.admin-cell.header-cell:not(.corner-cell):not(.points-label) input {
+  cursor: auto;
+  user-select: text;
 }
 
 .admin-cell.question-cell.drag-source {
@@ -275,6 +291,17 @@ body {
   border-style: dashed;
 }
 .admin-cell.question-cell.drag-over {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold);
+  background: rgba(224, 184, 74, 0.08);
+}
+
+/* Column drag (category swap) */
+.admin-cell.col-drag-source {
+  opacity: 0.45;
+  border-style: dashed;
+}
+.admin-cell.col-drag-over {
   border-color: var(--gold);
   box-shadow: 0 0 0 2px var(--gold);
   background: rgba(224, 184, 74, 0.08);

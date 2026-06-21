@@ -393,6 +393,7 @@ function autoResizeAll() {
 // ── Cell drag-to-swap ────────────────────────────────────────────────────────
 
 let _dragSourceCell = null;
+let _dragSourceCat  = null; // { boardId, catIdx }
 
 function _getCellValues(cell) {
   const qInput  = cell.querySelector('.q-input');
@@ -427,6 +428,45 @@ function _setCellValues(cell, vals) {
   if (nddInput) nddInput.checked = !vals.dd_eligible;
 }
 
+function _getCategoryValues(boardId, catIdx) {
+  const titleInput = document.querySelector(`.cat-title-input[data-board="${boardId}"][data-cat-index="${catIdx}"]`);
+  const questions = [];
+  for (let qIdx = 0; qIdx < 5; qIdx++) {
+    const qInput   = document.querySelector(`.q-input[data-board="${boardId}"][data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
+    const aInput   = document.querySelector(`.a-input[data-board="${boardId}"][data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
+    const nddInput = document.querySelector(`.no-dd-input[data-board="${boardId}"][data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
+    questions.push({
+      question:    qInput   ? qInput.value        : '',
+      answer:      aInput   ? aInput.value        : '',
+      dd_eligible: nddInput ? !nddInput.checked   : true
+    });
+  }
+  return { title: titleInput ? titleInput.value : '', questions };
+}
+
+function _setCategoryValues(boardId, catIdx, vals) {
+  const titleInput = document.querySelector(`.cat-title-input[data-board="${boardId}"][data-cat-index="${catIdx}"]`);
+  if (titleInput) {
+    titleInput.value = vals.title;
+    titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  for (let qIdx = 0; qIdx < 5; qIdx++) {
+    const qInput = document.querySelector(`.q-input[data-board="${boardId}"][data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
+    if (!qInput) continue;
+    const cell = qInput.closest('.admin-cell');
+    if (cell) _setCellValues(cell, vals.questions[qIdx]);
+  }
+}
+
+function _highlightCol(boardId, catIdx, cls, add) {
+  for (let qIdx = 0; qIdx < 5; qIdx++) {
+    const q = document.querySelector(`.q-input[data-board="${boardId}"][data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
+    if (q) q.closest('.admin-cell')?.classList.toggle(cls, add);
+  }
+  const t = document.querySelector(`.cat-title-input[data-board="${boardId}"][data-cat-index="${catIdx}"]`);
+  if (t) t.closest('.admin-cell')?.classList.toggle(cls, add);
+}
+
 function initCellSwap() {
   document.querySelectorAll('.admin-cell.question-cell').forEach(cell => {
     if (cell.dataset.swapInit) return;
@@ -436,14 +476,14 @@ function initCellSwap() {
     // Toggle draggable off when mousedown lands on an interactive child,
     // so text selection / checkbox clicks don't accidentally start a drag.
     cell.addEventListener('mousedown', (e) => {
-      const interactive = e.target.closest('textarea, input, label, button, .q-img-thumb, .q-img-clear');
+      const interactive = e.target.closest('textarea, input, label:not(.cell-label), button, .q-img-thumb, .q-img-clear');
       cell.setAttribute('draggable', interactive ? 'false' : 'true');
     });
     cell.addEventListener('mouseup', () => cell.setAttribute('draggable', 'true'));
 
     cell.addEventListener('dragstart', (e) => {
       // Secondary guard in case mousedown toggle didn't fire
-      const interactive = e.target.closest('textarea, input, label, button, .q-img-preview, .q-img-thumb, .q-img-clear, .q-img-caption-input');
+      const interactive = e.target.closest('textarea, input, label:not(.cell-label), button, .q-img-preview, .q-img-thumb, .q-img-clear, .q-img-caption-input');
       if (interactive) { e.preventDefault(); return; }
       _dragSourceCell = cell;
       cell.classList.add('drag-source');
@@ -489,12 +529,12 @@ function initCellSwap() {
     tab.dataset.dragTabInit = '1';
 
     tab.addEventListener('dragover', (e) => {
-      if (!_dragSourceCell) return;
+      if (!_dragSourceCell && !_dragSourceCat) return;
       e.preventDefault();
       tab.classList.add('drag-tab-hover');
       if (!_tabSwitchTimer) {
         _tabSwitchTimer = setTimeout(() => {
-          if (_dragSourceCell) switchTab(tab);
+          if (_dragSourceCell || _dragSourceCat) switchTab(tab);
           _tabSwitchTimer = null;
         }, 600);
       }
@@ -510,6 +550,67 @@ function initCellSwap() {
       tab.classList.remove('drag-tab-hover');
       clearTimeout(_tabSwitchTimer);
       _tabSwitchTimer = null;
+    });
+  });
+}
+
+function initCategorySwap() {
+  document.querySelectorAll('.admin-cell.header-cell:not(.corner-cell)').forEach(headerCell => {
+    if (headerCell.dataset.catSwapInit) return;
+    const titleInput = headerCell.querySelector('.cat-title-input');
+    if (!titleInput) return; // points-label cells have no title input
+    headerCell.dataset.catSwapInit = '1';
+    headerCell.setAttribute('draggable', 'true');
+
+    headerCell.addEventListener('mousedown', (e) => {
+      headerCell.setAttribute('draggable', e.target.closest('input, label:not(.cell-label)') ? 'false' : 'true');
+    });
+    headerCell.addEventListener('mouseup', () => headerCell.setAttribute('draggable', 'true'));
+
+    headerCell.addEventListener('dragstart', (e) => {
+      if (e.target.closest('input, label:not(.cell-label)')) { e.preventDefault(); return; }
+      const boardId = titleInput.dataset.board;
+      const catIdx  = parseInt(titleInput.dataset.catIndex, 10);
+      _dragSourceCat = { boardId, catIdx };
+      _highlightCol(boardId, catIdx, 'col-drag-source', true);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', '');
+    });
+
+    headerCell.addEventListener('dragend', () => {
+      if (_dragSourceCat) _highlightCol(_dragSourceCat.boardId, _dragSourceCat.catIdx, 'col-drag-source', false);
+      _dragSourceCat = null;
+      document.querySelectorAll('.admin-cell.col-drag-over').forEach(c => c.classList.remove('col-drag-over'));
+    });
+
+    headerCell.addEventListener('dragover', (e) => {
+      if (!_dragSourceCat) return;
+      const destBoard  = titleInput.dataset.board;
+      const destCatIdx = parseInt(titleInput.dataset.catIndex, 10);
+      if (_dragSourceCat.boardId === destBoard && _dragSourceCat.catIdx === destCatIdx) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.admin-cell.col-drag-over').forEach(c => c.classList.remove('col-drag-over'));
+      _highlightCol(destBoard, destCatIdx, 'col-drag-over', true);
+    });
+
+    headerCell.addEventListener('dragleave', (e) => {
+      if (!headerCell.contains(e.relatedTarget)) {
+        _highlightCol(titleInput.dataset.board, parseInt(titleInput.dataset.catIndex, 10), 'col-drag-over', false);
+      }
+    });
+
+    headerCell.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (!_dragSourceCat) return;
+      const destBoard  = titleInput.dataset.board;
+      const destCatIdx = parseInt(titleInput.dataset.catIndex, 10);
+      if (_dragSourceCat.boardId === destBoard && _dragSourceCat.catIdx === destCatIdx) return;
+      const srcVals  = _getCategoryValues(_dragSourceCat.boardId, _dragSourceCat.catIdx);
+      const destVals = _getCategoryValues(destBoard, destCatIdx);
+      _setCategoryValues(_dragSourceCat.boardId, _dragSourceCat.catIdx, destVals);
+      _setCategoryValues(destBoard, destCatIdx, srcVals);
+      _highlightCol(destBoard, destCatIdx, 'col-drag-over', false);
     });
   });
 }
@@ -546,6 +647,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFinal();
   initImageDrop();
   initCellSwap();
+  initCategorySwap();
   autoResizeAll();
 
   // Re-run after fonts finish loading — scrollHeight can be wrong if measured
