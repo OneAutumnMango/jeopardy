@@ -37,6 +37,11 @@ function resetBoard() {
 
 // ── Question content renderer ─────────────────────────────────────────────────
 
+function spaceUnderscores(text) {
+  // Separate consecutive underscores with a narrow no-break space so they're countable
+  return text.replace(/_+/g, m => Array.from(m).join('\u202F'));
+}
+
 function renderQuestionContent(text, el) {
   if (text && text.startsWith('[img]')) {
     el.textContent = '';
@@ -51,11 +56,11 @@ function renderQuestionContent(text, el) {
     if (caption) {
       const cap = document.createElement('div');
       cap.className = 'overlay-img-caption';
-      cap.textContent = caption;
+      cap.textContent = spaceUnderscores(caption);
       el.appendChild(cap);
     }
   } else {
-    el.textContent = text || '';
+    el.textContent = spaceUnderscores(text || '');
   }
 }
 

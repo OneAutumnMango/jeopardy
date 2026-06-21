@@ -39,13 +39,17 @@
 const LS_KEY = 'jeopardy-final';
 const SERVER = {{ final | tojson }};
 
+function spaceUnderscores(text) {
+  return text.replace(/_+/g, m => Array.from(m).join('\u202F'));
+}
+
 function load() {
   const raw = localStorage.getItem(LS_KEY);
   let d = SERVER;
   if (raw) {
     try { d = JSON.parse(raw); } catch {}
   }
-  document.getElementById('category-text').textContent = d.category || '(no category)';
+  document.getElementById('category-text').textContent = spaceUnderscores(d.category || '(no category)');
 
   const qEl = document.getElementById('question-text');
   const q = d.question || '';
@@ -54,9 +58,9 @@ function load() {
     const src = capIdx === -1 ? q.slice(5) : q.slice(5, capIdx);
     const cap = capIdx === -1 ? '' : q.slice(capIdx + 5);
     qEl.innerHTML = `<img src="${src}" style="max-width:100%;max-height:45vh;border-radius:6px">` +
-      (cap ? `<div class="overlay-img-caption">${cap}</div>` : '');
+      (cap ? `<div class="overlay-img-caption">${spaceUnderscores(cap)}</div>` : '');
   } else {
-    qEl.textContent = q || '(no question)';
+    qEl.textContent = spaceUnderscores(q) || '(no question)';
   }
 
   const aEl = document.getElementById('answer-text');
@@ -66,9 +70,9 @@ function load() {
     const src = capIdx === -1 ? a.slice(5) : a.slice(5, capIdx);
     const cap = capIdx === -1 ? '' : a.slice(capIdx + 5);
     aEl.innerHTML = `<img src="${src}" style="max-width:100%;max-height:45vh;border-radius:6px">` +
-      (cap ? `<div class="overlay-img-caption">${cap}</div>` : '');
+      (cap ? `<div class="overlay-img-caption">${spaceUnderscores(cap)}</div>` : '');
   } else {
-    aEl.textContent = a || '(no answer)';
+    aEl.textContent = spaceUnderscores(a) || '(no answer)';
   }
 }
 
