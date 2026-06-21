@@ -30,11 +30,13 @@ function serializeBoard(boardId) {
     for (let qIdx = 0; qIdx < 5; qIdx++) {
       const qInput = document.querySelector(`.q-input[data-board="${boardId}"][data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
       const aInput = document.querySelector(`.a-input[data-board="${boardId}"][data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
+      const nddInput = document.querySelector(`.no-dd-input[data-board="${boardId}"][data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
       questions.push({
         id: `q-${catIdx}-${qIdx}`,
         points: meta.point_multiplier * (qIdx + 1),
         question: qInput ? qInput.value.trim() : '',
-        answer:   aInput ? aInput.value.trim() : ''
+        answer:   aInput ? aInput.value.trim() : '',
+        dd_eligible: nddInput ? !nddInput.checked : true
       });
     }
     const origCat = meta.categories[catIdx];
@@ -68,8 +70,10 @@ function loadBoard(boardId) {
       cat.questions.forEach((q, qIdx) => {
         const qInput = document.querySelector(`.q-input[data-board="${boardId}"][data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
         const aInput = document.querySelector(`.a-input[data-board="${boardId}"][data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
+        const nddInput = document.querySelector(`.no-dd-input[data-board="${boardId}"][data-cat-index="${catIdx}"][data-q-index="${qIdx}"]`);
         if (qInput) qInput.value = q.question;
         if (aInput) aInput.value = q.answer;
+        if (nddInput) nddInput.checked = q.dd_eligible === false;
       });
     });
   } catch {}

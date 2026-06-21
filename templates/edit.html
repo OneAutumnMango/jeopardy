@@ -74,6 +74,7 @@
         <textarea class="q-input" data-board="board1" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="3" placeholder="Enter question…">{{ q.question }}</textarea>
         <label class="cell-label">Answer</label>
         <textarea class="a-input" data-board="board1" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="2" placeholder="Enter answer…">{{ q.answer }}</textarea>
+        <label class="no-dd-label"><input type="checkbox" class="no-dd-input" data-board="board1" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}"{% if q.dd_eligible is defined and not q.dd_eligible %} checked{% endif %}>No Daily Double</label>
       </div>
       {% endfor %}
       {% endfor %}
@@ -99,6 +100,7 @@
         <textarea class="q-input" data-board="board2" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="3" placeholder="Enter question…">{{ q.question }}</textarea>
         <label class="cell-label">Answer</label>
         <textarea class="a-input" data-board="board2" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}" rows="2" placeholder="Enter answer…">{{ q.answer }}</textarea>
+        <label class="no-dd-label"><input type="checkbox" class="no-dd-input" data-board="board2" data-cat-index="{{ loop.index0 }}" data-q-index="{{ q_idx }}"{% if q.dd_eligible is defined and not q.dd_eligible %} checked{% endif %}>No Daily Double</label>
       </div>
       {% endfor %}
       {% endfor %}

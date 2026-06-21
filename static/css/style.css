@@ -256,6 +256,26 @@ body {
 
 .cell-label:first-child { margin-top: 0; }
 
+.no-dd-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  user-select: none;
+}
+.no-dd-label input[type="checkbox"] {
+  accent-color: var(--gold, #e0b84a);
+  width: 0.85rem;
+  height: 0.85rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .cat-title-input,
 .q-input,
 .a-input {

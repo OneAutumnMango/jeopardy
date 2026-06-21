@@ -532,6 +532,44 @@ def test_pick_daily_doubles_count_capped_at_available():
     assert len(dds) == len(all_ids)
 
 
+def test_pick_daily_doubles_excludes_ineligible_questions():
+    from app import _pick_daily_doubles
+    board = default_boards()["board1"]
+    # Mark every question as ineligible except one
+    for cat in board["categories"]:
+        for q in cat["questions"]:
+            q["dd_eligible"] = False
+    # Re-enable just one
+    target_id = board["categories"][0]["questions"][0]["id"]
+    board["categories"][0]["questions"][0]["dd_eligible"] = True
+    dds = _pick_daily_doubles(board, 2)
+    assert dds == {target_id}
+
+
+def test_pick_daily_doubles_ineligible_id_never_selected():
+    from app import _pick_daily_doubles
+    board = default_boards()["board1"]
+    excluded_id = board["categories"][0]["questions"][0]["id"]
+    board["categories"][0]["questions"][0]["dd_eligible"] = False
+    all_ids = {q["id"] for cat in board["categories"] for q in cat["questions"]}
+    eligible_ids = all_ids - {excluded_id}
+    # Run many times to confirm the ineligible question is never picked
+    for _ in range(200):
+        dds = _pick_daily_doubles(board, 2)
+        assert excluded_id not in dds
+        assert dds.issubset(eligible_ids)
+
+
+def test_pick_daily_doubles_all_ineligible_returns_empty():
+    from app import _pick_daily_doubles
+    board = default_boards()["board1"]
+    for cat in board["categories"]:
+        for q in cat["questions"]:
+            q["dd_eligible"] = False
+    dds = _pick_daily_doubles(board, 2)
+    assert dds == set()
+
+
 # ── submit_wager/answer with non-player sid are ignored ───────────────────────
 
 def test_submit_wager_non_player_sid_ignored(host_with_session):
