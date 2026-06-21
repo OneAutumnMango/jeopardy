@@ -350,6 +350,120 @@ function initImageDrop() {
   });
 }
 
+// ── Cell drag-to-swap ────────────────────────────────────────────────────────
+
+let _dragSourceCell = null;
+
+function _getCellValues(cell) {
+  const qInput  = cell.querySelector('.q-input');
+  const aInput  = cell.querySelector('.a-input');
+  const nddInput = cell.querySelector('.no-dd-input');
+  return {
+    question:    qInput  ? qInput.value  : '',
+    answer:      aInput  ? aInput.value  : '',
+    dd_eligible: nddInput ? !nddInput.checked : true
+  };
+}
+
+function _setCellValues(cell, vals) {
+  const qInput   = cell.querySelector('.q-input');
+  const aInput   = cell.querySelector('.a-input');
+  const nddInput = cell.querySelector('.no-dd-input');
+  // Remove any existing image preview before changing value
+  const oldPreview = cell.querySelector('.q-img-preview');
+  if (oldPreview) oldPreview.remove();
+  if (qInput) {
+    qInput.style.display = '';
+    qInput.value = vals.question;
+    if (vals.question.startsWith('[img]')) showQImgPreview(qInput);
+    qInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  if (aInput) {
+    aInput.value = vals.answer;
+    aInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  if (nddInput) nddInput.checked = !vals.dd_eligible;
+}
+
+function initCellSwap() {
+  document.querySelectorAll('.admin-cell.question-cell').forEach(cell => {
+    if (cell.dataset.swapInit) return;
+    cell.dataset.swapInit = '1';
+    cell.setAttribute('draggable', 'true');
+
+    cell.addEventListener('dragstart', (e) => {
+      // Cancel drag if it originates from an interactive element
+      const interactive = e.target.closest('textarea, input, label, button, .q-img-preview, .q-img-thumb, .q-img-clear, .q-img-caption-input');
+      if (interactive) { e.preventDefault(); return; }
+      _dragSourceCell = cell;
+      cell.classList.add('drag-source');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', '');
+    });
+
+    cell.addEventListener('dragend', () => {
+      _dragSourceCell = null;
+      document.querySelectorAll('.admin-cell.question-cell').forEach(c => {
+        c.classList.remove('drag-source', 'drag-over');
+      });
+    });
+
+    cell.addEventListener('dragover', (e) => {
+      if (!_dragSourceCell || _dragSourceCell === cell) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      cell.classList.add('drag-over');
+    });
+
+    cell.addEventListener('dragleave', (e) => {
+      if (!cell.contains(e.relatedTarget)) {
+        cell.classList.remove('drag-over');
+      }
+    });
+
+    cell.addEventListener('drop', (e) => {
+      e.preventDefault();
+      cell.classList.remove('drag-over');
+      if (!_dragSourceCell || _dragSourceCell === cell) return;
+      const srcVals  = _getCellValues(_dragSourceCell);
+      const destVals = _getCellValues(cell);
+      _setCellValues(_dragSourceCell, destVals);
+      _setCellValues(cell, srcVals);
+    });
+  });
+
+  // Drag-over tab buttons to auto-switch board (600 ms hover delay)
+  let _tabSwitchTimer = null;
+  document.querySelectorAll('.edit-tab[data-tab="tab-board1"], .edit-tab[data-tab="tab-board2"]').forEach(tab => {
+    if (tab.dataset.dragTabInit) return;
+    tab.dataset.dragTabInit = '1';
+
+    tab.addEventListener('dragover', (e) => {
+      if (!_dragSourceCell) return;
+      e.preventDefault();
+      tab.classList.add('drag-tab-hover');
+      if (!_tabSwitchTimer) {
+        _tabSwitchTimer = setTimeout(() => {
+          if (_dragSourceCell) switchTab(tab);
+          _tabSwitchTimer = null;
+        }, 600);
+      }
+    });
+
+    tab.addEventListener('dragleave', () => {
+      tab.classList.remove('drag-tab-hover');
+      clearTimeout(_tabSwitchTimer);
+      _tabSwitchTimer = null;
+    });
+
+    tab.addEventListener('drop', () => {
+      tab.classList.remove('drag-tab-hover');
+      clearTimeout(_tabSwitchTimer);
+      _tabSwitchTimer = null;
+    });
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 function handleImportTargeted(event, target) {
@@ -381,6 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadBoard('board2');
   loadFinal();
   initImageDrop();
+  initCellSwap();
 
   // Lightbox close on backdrop click or Escape
   document.getElementById('img-lightbox-backdrop').addEventListener('click', closeImgLightbox);

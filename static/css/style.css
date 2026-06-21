@@ -256,6 +256,30 @@ body {
 
 .cell-label:first-child { margin-top: 0; }
 
+.admin-cell.question-cell {
+  cursor: grab;
+}
+.admin-cell.question-cell:active {
+  cursor: grabbing;
+}
+.admin-cell.question-cell textarea,
+.admin-cell.question-cell input,
+.admin-cell.question-cell label,
+.admin-cell.question-cell button,
+.admin-cell.question-cell .q-img-preview {
+  cursor: auto;
+}
+
+.admin-cell.question-cell.drag-source {
+  opacity: 0.45;
+  border-style: dashed;
+}
+.admin-cell.question-cell.drag-over {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold);
+  background: rgba(224, 184, 74, 0.08);
+}
+
 .no-dd-label {
   display: flex;
   align-items: center;
@@ -1142,6 +1166,12 @@ body {
 .edit-tab.active {
   color: var(--gold);
   border-bottom-color: var(--gold);
+}
+.edit-tab.drag-tab-hover {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+  background: rgba(224, 184, 74, 0.12);
+  transition: background 0.1s;
 }
 .tab-panel { display: block; }
 .tab-panel.hidden { display: none; }
