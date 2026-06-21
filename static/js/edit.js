@@ -285,15 +285,20 @@ function showQImgPreview(textarea) {
   preview.innerHTML = `
     <img src="${src}" class="q-img-thumb" alt="Question image">
     <button type="button" class="q-img-clear" title="Remove image">✕</button>
-    <input type="text" class="q-img-caption-input" placeholder="Optional caption / question text…" value="${caption.replace(/"/g, '&quot;')}">
+    <textarea class="q-img-caption-input" rows="1" placeholder="Optional caption / question text…">${caption.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
   `;
   // Keep textarea value in sync when caption changes
-  preview.querySelector('.q-img-caption-input').addEventListener('input', (e) => {
+  const capInput = preview.querySelector('.q-img-caption-input');
+  capInput.addEventListener('input', (e) => {
+    autoResize(e.target);
     const cap = e.target.value;
     const base = `[img]${src}`;
     textarea.value = cap ? `${base}[cap]${cap}` : base;
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   });
+  // Set initial value and resize
+  capInput.value = caption;
+  requestAnimationFrame(() => autoResize(capInput));
   preview.querySelector('.q-img-thumb').addEventListener('click', () => openImgLightbox(src));
   preview.querySelector('.q-img-clear').addEventListener('click', () => {
     textarea.value = '';
@@ -405,8 +410,16 @@ function initCellSwap() {
     cell.dataset.swapInit = '1';
     cell.setAttribute('draggable', 'true');
 
+    // Toggle draggable off when mousedown lands on an interactive child,
+    // so text selection / checkbox clicks don't accidentally start a drag.
+    cell.addEventListener('mousedown', (e) => {
+      const interactive = e.target.closest('textarea, input, label, button, .q-img-thumb, .q-img-clear');
+      cell.setAttribute('draggable', interactive ? 'false' : 'true');
+    });
+    cell.addEventListener('mouseup', () => cell.setAttribute('draggable', 'true'));
+
     cell.addEventListener('dragstart', (e) => {
-      // Cancel drag if it originates from an interactive element
+      // Secondary guard in case mousedown toggle didn't fire
       const interactive = e.target.closest('textarea, input, label, button, .q-img-preview, .q-img-thumb, .q-img-clear, .q-img-caption-input');
       if (interactive) { e.preventDefault(); return; }
       _dragSourceCell = cell;

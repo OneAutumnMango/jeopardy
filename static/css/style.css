@@ -1356,6 +1356,8 @@ body {
   font-size: 0.85rem;
   font-family: inherit;
   box-sizing: border-box;
+  resize: none;
+  overflow: hidden;
 }
 .q-img-caption-input:focus {
   outline: none;
