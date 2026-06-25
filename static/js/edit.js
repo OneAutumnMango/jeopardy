@@ -410,9 +410,8 @@ function _setCellValues(cell, vals) {
   const qInput   = cell.querySelector('.q-input');
   const aInput   = cell.querySelector('.a-input');
   const nddInput = cell.querySelector('.no-dd-input');
-  // Remove any existing image preview before changing value
-  const oldPreview = cell.querySelector('.q-img-preview');
-  if (oldPreview) oldPreview.remove();
+  // Remove ALL existing image previews (question and answer) before changing values
+  cell.querySelectorAll('.q-img-preview').forEach(p => p.remove());
   if (qInput) {
     qInput.style.display = '';
     qInput.value = vals.question;
@@ -421,7 +420,9 @@ function _setCellValues(cell, vals) {
     autoResize(qInput);
   }
   if (aInput) {
+    aInput.style.display = '';
     aInput.value = vals.answer;
+    if (vals.answer.startsWith('[img]')) showQImgPreview(aInput);
     aInput.dispatchEvent(new Event('input', { bubbles: true }));
     autoResize(aInput);
   }
