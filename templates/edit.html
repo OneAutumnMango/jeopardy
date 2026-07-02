@@ -16,6 +16,7 @@
           <button class="split-arrow" onclick="toggleDropdown('export-menu')" title="Export specific">▾</button>
         </div>
         <div id="export-menu" class="dropdown-menu hidden">
+          <button onclick="exportAll(); closeDropdowns()">Export All</button>
           <button onclick="exportOne('board1'); closeDropdowns()">Board 1 only</button>
           <button onclick="exportOne('board2'); closeDropdowns()">Board 2 only</button>
           <button onclick="exportOne('final'); closeDropdowns()">Final Jeopardy only</button>
@@ -28,19 +29,23 @@
           <button class="split-arrow" onclick="toggleDropdown('import-menu')" title="Import specific">▾</button>
         </div>
         <div id="import-menu" class="dropdown-menu hidden">
+          <button onclick="document.getElementById('import-input').click(); closeDropdowns()">Import All</button>
           <label style="cursor:pointer;display:block;padding:0.55rem 1rem;font-size:0.9rem" onclick="closeDropdowns()">Into Board 1<input id="import-board1" type="file" accept=".json" style="display:none" data-target="board1"></label>
           <label style="cursor:pointer;display:block;padding:0.55rem 1rem;font-size:0.9rem" onclick="closeDropdowns()">Into Board 2<input id="import-board2" type="file" accept=".json" style="display:none" data-target="board2"></label>
           <label style="cursor:pointer;display:block;padding:0.55rem 1rem;font-size:0.9rem" onclick="closeDropdowns()">Into Final Jeopardy<input id="import-final" type="file" accept=".json" style="display:none" data-target="final"></label>
         </div>
       </div>
-      <!-- Reset dropdown -->
-      <div class="dropdown-wrap">
-        <button class="btn btn-danger" onclick="toggleDropdown('reset-menu')">Reset ▾</button>
+      <!-- Reset split button -->
+      <div class="dropdown-wrap split-btn-wrap">
+        <div class="split-btn split-btn-danger">
+          <button onclick="toggleDropdown('reset-menu')">Reset</button>
+          <button class="split-arrow" onclick="toggleDropdown('reset-menu')" title="Reset options">▾</button>
+        </div>
         <div id="reset-menu" class="dropdown-menu hidden">
+          <button onclick="resetAll(); closeDropdowns()">Reset All</button>
           <button onclick="resetOne('board1'); closeDropdowns()">Reset Board 1</button>
           <button onclick="resetOne('board2'); closeDropdowns()">Reset Board 2</button>
           <button onclick="resetOne('final'); closeDropdowns()">Reset Final Jeopardy</button>
-          <button onclick="resetAll(); closeDropdowns()">Reset All</button>
         </div>
       </div>
       <button id="save-btn" class="btn btn-gold" onclick="saveAll()">Save All</button>

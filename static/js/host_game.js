@@ -224,7 +224,7 @@ socket.on('restore_state', ({ phase, final }) => {
   } else {
     // Answer phase — question already revealed
     document.getElementById('fo-question-wrap').classList.remove('hidden');
-    document.getElementById('fo-question').textContent = final.question || '';
+    renderQuestionContent(final.question || '', document.getElementById('fo-question'));
     document.getElementById('fo-proceed-btn').classList.add('hidden');
     // Determine label
     const allAnswered = scores.filter(s => s.score >= 0).every(s => foAnswered.has(s.name));
@@ -553,7 +553,7 @@ function foProceedToQuestion() {
   socket.emit('host_reveal_final_question', { code: SESSION_CODE, question });
   foPhase = 'answer';
   foAnswered = new Set();
-  document.getElementById('fo-question').textContent = question;
+  renderQuestionContent(question, document.getElementById('fo-question'));
   document.getElementById('fo-question-wrap').classList.remove('hidden');
   document.getElementById('fo-phase-label').textContent = 'Waiting for answers…';
   document.getElementById('fo-proceed-btn').classList.add('hidden');

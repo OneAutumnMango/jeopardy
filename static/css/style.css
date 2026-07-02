@@ -1272,6 +1272,22 @@ body {
   font-size: 0.75rem;
 }
 
+.split-btn-danger {
+  border-color: #8c2a2a;
+}
+.split-btn-danger button,
+.split-btn-danger label {
+  background: #5c1a1a;
+  color: #ff9a9a;
+}
+.split-btn-danger button:hover,
+.split-btn-danger label:hover {
+  background: #6b2222;
+}
+.split-btn-danger .split-arrow {
+  border-left-color: #8c2a2a;
+}
+
 /* ── Final Jeopardy overlay player rows ──────────────────────────────────── */
 .fo-player-row {
   background: rgba(255,255,255,0.06);
